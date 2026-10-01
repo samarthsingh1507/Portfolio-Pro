@@ -129,7 +129,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
               </div>
 
               <!-- Top Holdings Table -->
-              <div *ngIf="portfolio && portfolio.holdings.length > 0" class="table-wrapper">
+              <div *ngIf="portfolio && portfolio.holdings.length > 0" class="table-wrapper scrollable-card-body">
                 <table class="dash-table">
                   <thead>
                     <tr>
@@ -180,14 +180,14 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
               </div>
 
               <!-- Empty State -->
-              <div *ngIf="recentOrders.length === 0" class="empty-box">
+              <div *ngIf="recentOrders.length === 0" class="empty-box scrollable-card-body">
                 <span class="empty-icon">📋</span>
                 <p>No recent orders executed yet.</p>
                 <a routerLink="/market" class="btn btn-sm btn-outline">Place First Trade</a>
               </div>
 
               <!-- Orders Table -->
-              <div *ngIf="recentOrders.length > 0" class="table-wrapper">
+              <div *ngIf="recentOrders.length > 0" class="table-wrapper scrollable-card-body">
                 <table class="dash-table">
                   <thead>
                     <tr>
@@ -230,10 +230,16 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
             <div class="dashboard-card">
               <div class="card-header">
                 <div>
-                  <h3>Market Leaders</h3>
-                  <p class="card-sub">Real-time market data from backend</p>
+                  <div class="card-title-row">
+                    <h3>Market Leaders</h3>
+                    <span class="live-pill"><span class="pulse-dot"></span> LIVE</span>
+                  </div>
+                  <p class="card-sub">{{ popularStocks.length }} real-time tracked market instruments</p>
                 </div>
                 <div class="card-header-actions">
+                  <button class="btn-micro btn-micro-expand" (click)="openMarketLeadersModal()" title="Open expanded Market Leaders window">
+                    ⛶ Expand Window
+                  </button>
                   <button class="btn-micro btn-micro-refresh" (click)="loadMarketQuotes()" title="Refresh live quotes">
                     ↻ Refresh
                   </button>
@@ -241,11 +247,11 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                 </div>
               </div>
 
-              <div *ngIf="popularStocks.length === 0" class="empty-box">
+              <div *ngIf="popularStocks.length === 0" class="empty-box scrollable-card-body">
                 <p>No market stocks available.</p>
               </div>
 
-              <div *ngIf="popularStocks.length > 0" class="popular-stocks-list">
+              <div *ngIf="popularStocks.length > 0" class="popular-stocks-list scrollable-card-body">
                 <div *ngFor="let s of popularStocks" class="popular-stock-row">
                   <div class="pop-left">
                     <a [routerLink]="['/market', s.symbol]" class="stock-sym-lg">{{ s.symbol }}</a>
@@ -334,13 +340,13 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
               </div>
 
               <!-- Empty State -->
-              <div *ngIf="watchlist.length === 0" class="empty-box">
+              <div *ngIf="watchlist.length === 0" class="empty-box scrollable-card-body">
                 <span class="empty-icon">⭐</span>
                 <p>Your watchlist is empty. Add stocks from the market to monitor them here.</p>
                 <a routerLink="/market" class="btn btn-sm btn-outline">Browse Stocks</a>
               </div>
 
-              <div *ngIf="watchlist.length > 0" class="watchlist-items-list">
+              <div *ngIf="watchlist.length > 0" class="watchlist-items-list scrollable-card-body">
                 <div *ngFor="let w of watchlist" class="watchlist-row">
                   <div class="watch-left">
                     <a [routerLink]="['/market', w.symbol]" class="stock-sym">{{ w.symbol }}</a>
@@ -358,6 +364,181 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MARKET LEADERS EXPANDED WINDOW MODAL -->
+      <div *ngIf="showMarketLeadersModal" class="modal-backdrop" (click)="closeMarketLeadersModal()">
+        <div class="modal-dialog modal-xl" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-title-group">
+              <div class="modal-badge-title">
+                <h2>🚀 Market Leaders Live Explorer</h2>
+                <span class="live-pill"><span class="pulse-dot"></span> {{ filteredModalStocks.length }} ASSETS LIVE</span>
+              </div>
+              <p class="modal-subtitle">Real-time quotes, technical charts, sparklines, and direct instant execution.</p>
+            </div>
+            <button class="modal-close-btn" (click)="closeMarketLeadersModal()" title="Close Window">✕</button>
+          </div>
+
+          <!-- Filter & Search Toolbar -->
+          <div class="modal-toolbar">
+            <div class="search-input-wrapper">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                class="search-input"
+                placeholder="Search symbol (e.g. AAPL, NVDA, EUR/USD) or company name..."
+                [(ngModel)]="modalSearchTerm"
+              />
+              <button *ngIf="modalSearchTerm" class="clear-search-btn" (click)="modalSearchTerm = ''">✕</button>
+            </div>
+
+            <div class="sector-tabs">
+              <button
+                class="tab-pill"
+                [ngClass]="{ 'tab-active': modalSectorFilter === 'ALL' }"
+                (click)="modalSectorFilter = 'ALL'"
+              >
+                All ({{ popularStocks.length }})
+              </button>
+              <button
+                class="tab-pill"
+                [ngClass]="{ 'tab-active': modalSectorFilter === 'Technology' }"
+                (click)="modalSectorFilter = 'Technology'"
+              >
+                Technology
+              </button>
+              <button
+                class="tab-pill"
+                [ngClass]="{ 'tab-active': modalSectorFilter === 'Automotive' }"
+                (click)="modalSectorFilter = 'Automotive'"
+              >
+                Automotive
+              </button>
+              <button
+                class="tab-pill"
+                [ngClass]="{ 'tab-active': modalSectorFilter === 'Forex' }"
+                (click)="modalSectorFilter = 'Forex'"
+              >
+                Forex & FX
+              </button>
+              <button
+                class="tab-pill"
+                [ngClass]="{ 'tab-active': modalSectorFilter === 'Finance' }"
+                (click)="modalSectorFilter = 'Finance'"
+              >
+                Finance
+              </button>
+              <button
+                class="tab-pill"
+                [ngClass]="{ 'tab-active': modalSectorFilter === 'Healthcare' }"
+                (click)="modalSectorFilter = 'Healthcare'"
+              >
+                Healthcare
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Content Table / Grid -->
+          <div class="modal-table-container">
+            <table class="modal-market-table">
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Sector</th>
+                  <th class="text-center">Trend (Live)</th>
+                  <th class="text-right">Live Price</th>
+                  <th class="text-right">24h Change</th>
+                  <th class="text-center">Status</th>
+                  <th class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of filteredModalStocks" class="modal-table-row">
+                  <td>
+                    <div class="asset-cell">
+                      <a [routerLink]="['/market', s.symbol]" (click)="closeMarketLeadersModal()" class="asset-symbol">
+                        {{ s.symbol }}
+                      </a>
+                      <span class="asset-name">{{ s.companyName }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="sector-tag">{{ s.sector }}</span>
+                  </td>
+                  <td class="text-center">
+                    <svg class="modal-sparkline" viewBox="0 0 64 22" width="76" height="26">
+                      <path [attr.d]="getSparklineFillD(s.symbol)" [attr.fill]="getSparklineColor(s.symbol)" fill-opacity="0.18" />
+                      <path [attr.d]="getSparklineD(s.symbol)" fill="none" [attr.stroke]="getSparklineColor(s.symbol)" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                  </td>
+                  <td class="text-right">
+                    <span class="modal-price font-bold">
+                      \${{ (liveQuotes[s.symbol]?.price || s.price) | number:(s.symbol.includes('/') ? '1.4-4' : '1.2-2') }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <span
+                      class="modal-change font-bold"
+                      [ngClass]="(liveQuotes[s.symbol]?.change ?? 0) >= 0 ? 'text-green' : 'text-red'"
+                    >
+                      {{ (liveQuotes[s.symbol]?.change ?? 0) >= 0 ? '▲ +' : '▼ ' }}\${{ ((liveQuotes[s.symbol]?.change ?? 0) >= 0 ? (liveQuotes[s.symbol]?.change ?? 0) : -(liveQuotes[s.symbol]?.change ?? 0)) | number:(s.symbol.includes('/') ? '1.4-4' : '1.2-2') }}
+                      ({{ (liveQuotes[s.symbol]?.changePercent ?? 0) | number:'1.2-2' }}%)
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <span
+                      class="market-badge-micro"
+                      [ngClass]="(liveQuotes[s.symbol]?.marketStatus || 'OPEN') === 'OPEN' ? 'status-open' : 'status-closed'"
+                    >
+                      <span class="dot-indicator"></span> {{ liveQuotes[s.symbol]?.marketStatus || 'OPEN' }}
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <div class="modal-row-actions">
+                      <a [routerLink]="['/market', s.symbol]" (click)="closeMarketLeadersModal()" class="btn-micro btn-micro-chart">
+                        📊 Chart
+                      </a>
+                      <button class="btn-micro btn-micro-buy" (click)="openTradeForStock(s, 'BUY')">
+                        ⚡ Buy
+                      </button>
+                      <button
+                        class="btn-micro"
+                        [ngClass]="isInWatchlist(s.id) ? 'btn-micro-active' : 'btn-micro-star'"
+                        (click)="toggleWatchlist(s)"
+                        [title]="isInWatchlist(s.id) ? 'Remove from Watchlist' : 'Add to Watchlist'"
+                      >
+                        {{ isInWatchlist(s.id) ? '★' : '☆' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredModalStocks.length === 0">
+                  <td colspan="7" class="modal-empty-state">
+                    <p>No market assets found matching "{{ modalSearchTerm }}"</p>
+                    <button class="btn btn-sm btn-outline" (click)="modalSearchTerm = ''; modalSectorFilter = 'ALL'">Reset Filters</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="modal-footer">
+            <div class="modal-footer-stats">
+              <span class="footer-stat-item">Total Leaders: <strong>{{ popularStocks.length }}</strong></span>
+              <span class="footer-stat-item">Auto-Sync: <strong class="text-green">10s Active WebSocket / Polling</strong></span>
+            </div>
+            <div class="modal-footer-actions">
+              <a routerLink="/market" (click)="closeMarketLeadersModal()" class="btn btn-outline">
+                Open Full Market Screener →
+              </a>
+              <button class="btn btn-primary" (click)="closeMarketLeadersModal()">
+                Close Window
+              </button>
             </div>
           </div>
         </div>
@@ -538,7 +719,29 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 1rem;
+      height: 440px;
+      box-sizing: border-box;
+    }
+    .scrollable-card-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 0.25rem;
+    }
+    .scrollable-card-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scrollable-card-body::-webkit-scrollbar-track {
+      background: #0b1120;
+      border-radius: 4px;
+    }
+    .scrollable-card-body::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .scrollable-card-body::-webkit-scrollbar-thumb:hover {
+      background: #475569;
     }
     .card-header {
       display: flex;
@@ -546,6 +749,12 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       align-items: center;
       border-bottom: 1px solid #1e293b;
       padding-bottom: 0.85rem;
+      flex-shrink: 0;
+    }
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
     }
     .card-header h3 {
       margin: 0 0 0.2rem 0;
@@ -573,6 +782,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
     }
     .empty-icon {
@@ -598,6 +808,9 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       text-transform: uppercase;
       letter-spacing: 0.05em;
       padding: 0.65rem 0.85rem;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
     .dash-table td {
       padding: 0.8rem 0.85rem;
@@ -680,6 +893,47 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
     .btn-micro-trade:hover {
       background: #38bdf8;
       color: #0f172a;
+    }
+    .btn-micro-expand {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-micro-expand:hover {
+      background: #38bdf8;
+      color: #0f172a;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.65rem;
+      font-weight: 800;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
     }
     .btn-micro-buy {
       background: rgba(16, 185, 129, 0.15);
@@ -770,7 +1024,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
     .card-header-actions {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
     .btn-micro-refresh {
       background: rgba(56, 189, 248, 0.1);
@@ -809,35 +1063,6 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       color: #38bdf8;
       font-size: 0.75rem;
       font-weight: 600;
-    }
-    .quote-status-error {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-    .error-badge {
-      font-size: 0.72rem;
-      color: #f87171;
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      padding: 0.15rem 0.4rem;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-    .btn-micro-retry {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid #334155;
-      padding: 0.15rem 0.4rem;
-      border-radius: 4px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .btn-micro-retry:hover {
-      border-color: #38bdf8;
-      background: rgba(56, 189, 248, 0.15);
     }
     .pop-quote-block {
       display: flex;
@@ -888,10 +1113,6 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
     .pop-timestamp {
       color: #64748b;
       font-size: 0.68rem;
-    }
-    .quote-pending {
-      font-size: 0.85rem;
-      color: #64748b;
     }
     .pop-actions {
       display: flex;
@@ -962,6 +1183,279 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       padding: 0.35rem 0.75rem;
       font-size: 0.8rem;
     }
+
+    /* MARKET LEADERS EXPANDED WINDOW MODAL STYLES */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(3, 7, 18, 0.82);
+      backdrop-filter: blur(8px);
+      z-index: 1050;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-dialog.modal-xl {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 1040px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(56, 189, 248, 0.15);
+      animation: modal-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modal-appear {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 1.5rem 1.75rem 1.25rem 1.75rem;
+      border-bottom: 1px solid #1e293b;
+      gap: 1rem;
+    }
+    .modal-badge-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .modal-badge-title h2 {
+      font-size: 1.4rem;
+      color: #f8fafc;
+      margin: 0;
+      font-weight: 800;
+    }
+    .modal-subtitle {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .modal-close-btn:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+    .modal-toolbar {
+      padding: 1rem 1.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background: #0b1120;
+      border-bottom: 1px solid #1e293b;
+    }
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+      display: flex;
+      align-items: center;
+    }
+    .search-icon {
+      position: absolute;
+      left: 0.85rem;
+      font-size: 0.85rem;
+      color: #64748b;
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      border-radius: 8px;
+      padding: 0.6rem 2rem 0.6rem 2.4rem;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .search-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+    .clear-search-btn {
+      position: absolute;
+      right: 0.65rem;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .sector-tabs {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .tab-pill {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tab-pill:hover {
+      color: #f8fafc;
+      border-color: #64748b;
+    }
+    .tab-pill.tab-active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+      font-weight: 700;
+    }
+    .modal-table-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 1.75rem;
+      max-height: 480px;
+    }
+    .modal-table-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    .modal-table-container::-webkit-scrollbar-track {
+      background: #0b1120;
+    }
+    .modal-table-container::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .modal-market-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .modal-market-table th {
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.85rem 0.75rem;
+      border-bottom: 2px solid #1e293b;
+      z-index: 2;
+    }
+    .modal-table-row td {
+      padding: 0.85rem 0.75rem;
+      border-bottom: 1px solid #1e293b;
+      color: #f1f5f9;
+      font-size: 0.875rem;
+    }
+    .modal-table-row:hover td {
+      background-color: rgba(30, 41, 59, 0.4);
+    }
+    .asset-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .asset-symbol {
+      color: #38bdf8;
+      font-weight: 800;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .asset-symbol:hover {
+      text-decoration: underline;
+    }
+    .asset-name {
+      color: #94a3b8;
+      font-size: 0.75rem;
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sector-tag {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .modal-price {
+      font-size: 0.95rem;
+      color: #f8fafc;
+    }
+    .modal-change {
+      font-size: 0.875rem;
+    }
+    .modal-row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .btn-micro-chart {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      text-decoration: none;
+    }
+    .btn-micro-chart:hover {
+      background: #38bdf8;
+      color: #0f172a;
+    }
+    .modal-empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #94a3b8;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.75rem;
+      border-top: 1px solid #1e293b;
+      background: #0b1120;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .modal-footer-stats {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    .modal-footer-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
   `]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -980,6 +1474,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   quotesLoading: Record<string, boolean> = {};
   quotesError: Record<string, string> = {};
 
+  // Market Leaders Window Modal State
+  showMarketLeadersModal = false;
+  modalSearchTerm = '';
+  modalSectorFilter = 'ALL';
+
   // Modal State for Quick Buy/Sell
   selectedTradeStock: { id: number; symbol: string; companyName: string; price: number } | null = null;
   tradeActionType: 'BUY' | 'SELL' = 'BUY';
@@ -993,6 +1492,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private watchlistService: WatchlistService,
     private tradeService: TradeService
   ) {}
+
+  get filteredModalStocks(): Stock[] {
+    return this.popularStocks.filter(s => {
+      const matchSearch = !this.modalSearchTerm ||
+        s.symbol.toLowerCase().includes(this.modalSearchTerm.toLowerCase()) ||
+        s.companyName.toLowerCase().includes(this.modalSearchTerm.toLowerCase());
+      
+      const matchSector = this.modalSectorFilter === 'ALL' ||
+        (this.modalSectorFilter === 'Forex' ? (s.sector?.includes('Forex') || s.symbol.includes('/')) : s.sector === this.modalSectorFilter);
+
+      return matchSearch && matchSector;
+    });
+  }
+
+  openMarketLeadersModal(): void {
+    this.showMarketLeadersModal = true;
+  }
+
+  closeMarketLeadersModal(): void {
+    this.showMarketLeadersModal = false;
+  }
 
   ngOnInit(): void {
     this.loadAllDashboardData();
