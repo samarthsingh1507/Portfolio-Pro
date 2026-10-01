@@ -228,54 +228,46 @@ interface DonutSegment {
                     </radialGradient>
 
                     <filter id="donut3dDropShadow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.65" />
+                      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.6" />
                     </filter>
 
                     <filter id="segmentActiveGlow" x="-30%" y="-30%" width="160%" height="160%">
-                      <feGaussianBlur stdDeviation="6" result="blur" />
+                      <feGaussianBlur stdDeviation="5" result="blur" />
                       <feComposite in="SourceGraphic" in2="blur" operator="over" />
                     </filter>
                   </defs>
 
-                  <!-- 3D Base Extrusion Shadows for Realistic Depth -->
+                  <!-- 3D Base Extrusion Shadow for Depth -->
                   <circle
                     cx="150"
-                    cy="162"
+                    cy="158"
                     r="85"
-                    fill="transparent"
+                    fill="none"
                     stroke="#070b14"
-                    stroke-width="38"
+                    stroke-width="36"
                     filter="url(#donut3dDropShadow)"
                   />
-                  <circle
-                    cx="150"
-                    cy="154"
-                    r="85"
-                    fill="transparent"
-                    stroke="#0b1329"
-                    stroke-width="36"
-                  />
 
-                  <!-- Background Base Track -->
+                  <!-- Background Base Track Ring -->
                   <circle
                     cx="150"
                     cy="150"
                     r="85"
-                    fill="transparent"
+                    fill="none"
                     stroke="#1e293b"
-                    stroke-width="36"
+                    stroke-width="34"
                   />
 
                   <!-- Interactive Donut Segments with 3D Depth & Hover Expansion -->
-                  <g class="donut-segments-group">
+                  <g class="donut-segments-group" transform="rotate(-90 150 150)">
                     <circle
                       *ngFor="let seg of donutSegments; let i = index"
                       cx="150"
                       cy="150"
                       r="85"
-                      fill="transparent"
+                      fill="none"
                       [attr.stroke]="seg.color"
-                      [attr.stroke-width]="hoveredSymbol === seg.symbol ? 46 : 36"
+                      [attr.stroke-width]="hoveredSymbol === seg.symbol ? 44 : 34"
                       [attr.stroke-dasharray]="seg.dashArray"
                       [attr.stroke-dashoffset]="seg.dashOffset"
                       [class.active-segment]="hoveredSymbol === seg.symbol"
@@ -283,7 +275,6 @@ interface DonutSegment {
                       [attr.filter]="hoveredSymbol === seg.symbol ? 'url(#segmentActiveGlow)' : null"
                       (mouseenter)="setHoveredAllocation(seg.item)"
                       (mouseleave)="setHoveredAllocation(null)"
-                      transform="rotate(-90 150 150)"
                     />
                   </g>
 
@@ -291,40 +282,52 @@ interface DonutSegment {
                   <circle
                     cx="150"
                     cy="150"
-                    r="103"
+                    r="102"
                     fill="url(#donut3dLighting)"
                     pointer-events="none"
-                    opacity="0.6"
+                    opacity="0.5"
                     style="mix-blend-mode: overlay;"
                   />
 
-                  <!-- Inner Floating Glassmorphism HUD Disc -->
-                  <circle
-                    cx="150"
-                    cy="150"
-                    r="64"
-                    fill="#0f172a"
-                    stroke="rgba(255, 255, 255, 0.12)"
-                    stroke-width="1.5"
-                    filter="drop-shadow(0 4px 10px rgba(0,0,0,0.5))"
-                  />
+                  <!-- Inner Floating 3D HUD Disc & Text directly inside SVG -->
+                  <g class="donut-center-hud-group" pointer-events="none">
+                    <circle
+                      cx="150"
+                      cy="150"
+                      r="65"
+                      fill="#0f172a"
+                      stroke="rgba(56, 189, 248, 0.3)"
+                      stroke-width="1.5"
+                      filter="drop-shadow(0 4px 8px rgba(0,0,0,0.6))"
+                    />
+
+                    <!-- Default HUD Content -->
+                    <g *ngIf="!hoveredAllocationItem">
+                      <text x="150" y="128" text-anchor="middle" fill="#64748b" font-size="10" font-weight="800" letter-spacing="1">PORTFOLIO</text>
+                      <text x="150" y="154" text-anchor="middle" fill="#f8fafc" font-size="19" font-weight="900" font-family="monospace">
+                        \${{ analytics.currentValue | number:'1.0-0' }}
+                      </text>
+                      <rect x="108" y="165" width="84" height="18" rx="9" fill="rgba(56, 189, 248, 0.15)" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1"/>
+                      <text x="150" y="177" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="800" letter-spacing="0.5">
+                        {{ analytics.allocation.length }} ASSETS
+                      </text>
+                    </g>
+
+                    <!-- Active Hovered Holding HUD Content -->
+                    <g *ngIf="hoveredAllocationItem">
+                      <rect x="110" y="112" width="80" height="18" rx="4" [attr.fill]="hoveredAllocationColor" />
+                      <text x="150" y="125" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="900" letter-spacing="0.5">
+                        {{ hoveredAllocationItem.symbol }}
+                      </text>
+                      <text x="150" y="152" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="900" font-family="monospace">
+                        \${{ (hoveredAllocationItem.currentValue ?? 0) | number:'1.0-2' }}
+                      </text>
+                      <text x="150" y="176" text-anchor="middle" [attr.fill]="hoveredAllocationColor" font-size="11" font-weight="800">
+                        {{ hoveredAllocationItem.percentage | number:'1.2-2' }}% SHARE
+                      </text>
+                    </g>
+                  </g>
                 </svg>
-
-                <!-- Central Interactive Dynamic Readout HUD -->
-                <div class="donut-center-hud">
-                  <div *ngIf="!hoveredAllocationItem" class="hud-default-content">
-                    <span class="hud-title">PORTFOLIO</span>
-                    <span class="hud-main-val font-mono">\${{ analytics.currentValue | number:'1.0-0' }}</span>
-                    <span class="hud-sub-badge">{{ analytics.allocation.length }} ASSETS</span>
-                  </div>
-
-                  <div *ngIf="hoveredAllocationItem" class="hud-active-content">
-                    <span class="hud-symbol-tag" [style.background-color]="hoveredAllocationColor">{{ hoveredAllocationItem.symbol }}</span>
-                    <span class="hud-active-name">{{ hoveredAllocationItem.companyName || hoveredAllocationItem.symbol }}</span>
-                    <span class="hud-active-val font-mono">\${{ (hoveredAllocationItem.currentValue ?? 0) | number:'1.2-2' }}</span>
-                    <span class="hud-active-pct" [style.color]="hoveredAllocationColor">{{ hoveredAllocationItem.percentage | number:'1.2-2' }}% SHARE</span>
-                  </div>
-                </div>
               </div>
 
               <!-- Allocation Table / List with 3D Depth & Cross-Hover Interactions -->
@@ -1264,14 +1267,14 @@ interface DonutSegment {
     /* 3D Interactive Donut Stage */
     .donut-3d-stage {
       position: relative;
-      width: 300px;
-      height: 300px;
+      width: 280px;
+      height: 280px;
       display: flex;
       align-items: center;
       justify-content: center;
       transform-style: preserve-3d;
-      transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-      cursor: crosshair;
+      transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      cursor: pointer;
     }
     .donut-svg {
       width: 100%;
@@ -1280,99 +1283,15 @@ interface DonutSegment {
     }
     .donut-segments-group circle {
       cursor: pointer;
-      transition: stroke-width 0.25s ease, opacity 0.25s ease, filter 0.25s ease;
-      transform-origin: 150px 150px;
+      transition: stroke-width 0.2s ease, opacity 0.2s ease;
     }
     .donut-segments-group circle:hover,
     .donut-segments-group circle.active-segment {
       opacity: 1 !important;
-      stroke-width: 46px !important;
+      stroke-width: 44px !important;
     }
     .donut-segments-group circle.dimmed-segment {
       opacity: 0.28;
-    }
-
-    /* Central Floating 3D Glass HUD */
-    .donut-center-hud {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) translateZ(35px);
-      width: 128px;
-      height: 128px;
-      border-radius: 50%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      pointer-events: none;
-      user-select: none;
-      z-index: 10;
-    }
-    .hud-default-content,
-    .hud-active-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.2rem;
-      width: 100%;
-      animation: hudFade 0.2s ease-out;
-    }
-    @keyframes hudFade {
-      from { opacity: 0; transform: scale(0.92); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    .hud-title {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: #64748b;
-      letter-spacing: 1px;
-    }
-    .hud-main-val {
-      font-size: 1.45rem;
-      font-weight: 900;
-      color: #f8fafc;
-      line-height: 1.1;
-    }
-    .hud-sub-badge {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.15);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 0.15rem 0.5rem;
-      border-radius: 9999px;
-      margin-top: 0.15rem;
-    }
-    .hud-symbol-tag {
-      font-size: 0.75rem;
-      font-weight: 900;
-      color: #0f172a;
-      padding: 0.15rem 0.6rem;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-    .hud-active-name {
-      font-size: 0.68rem;
-      color: #cbd5e1;
-      max-width: 110px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .hud-active-val {
-      font-size: 1.15rem;
-      font-weight: 900;
-      color: #f8fafc;
-      line-height: 1.1;
-    }
-    .hud-active-pct {
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.3px;
     }
 
     /* 3D Stacked Progress Bar */
