@@ -30,14 +30,25 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
 
         <!-- QUICK ACTIONS -->
         <div class="quick-actions">
-          <a routerLink="/market" class="btn btn-outline">
-            🔍 View Market
+          <a routerLink="/market" class="btn btn-outline" id="quick-view-market-btn">
+            <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+              <polyline points="16 7 22 7 22 13"></polyline>
+            </svg>
+            <span>View Market</span>
           </a>
-          <a routerLink="/portfolio" class="btn btn-outline">
-            💼 View Portfolio
+          <a routerLink="/portfolio" class="btn btn-outline" id="quick-view-portfolio-btn">
+            <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            <span>View Portfolio</span>
           </a>
-          <button class="btn btn-primary" (click)="openQuickBuy()">
-            ⚡ Buy Stock
+          <button class="btn btn-primary" (click)="openQuickBuy()" id="quick-buy-stock-btn">
+            <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>Buy Stock</span>
           </button>
         </div>
       </div>
@@ -123,7 +134,12 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
 
               <!-- Empty State -->
               <div *ngIf="!portfolio || portfolio.holdings.length === 0" class="empty-box">
-                <span class="empty-icon">💼</span>
+                <span class="empty-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                  </svg>
+                </span>
                 <p>No holdings yet. Start simulated trading to build your portfolio.</p>
                 <a routerLink="/market" class="btn btn-sm btn-outline">Explore Market</a>
               </div>
@@ -183,7 +199,14 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
 
               <!-- Empty State -->
               <div *ngIf="recentOrders.length === 0" class="empty-box scrollable-card-body">
-                <span class="empty-icon">📋</span>
+                <span class="empty-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                </span>
                 <p>No recent orders executed yet.</p>
                 <a routerLink="/market" class="btn btn-sm btn-outline">Place First Trade</a>
               </div>
@@ -240,7 +263,13 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                 </div>
                 <div class="card-header-actions">
                   <button class="btn-micro btn-micro-expand" (click)="openMarketLeadersModal()" title="Open expanded Market Leaders window">
-                    ⛶ Expand Window
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <polyline points="9 21 3 21 3 15"></polyline>
+                      <line x1="21" y1="3" x2="14" y2="10"></line>
+                      <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                    <span>Expand Window</span>
                   </button>
                   <button class="btn-micro btn-micro-refresh" (click)="refreshMarketLeadersNow()" [disabled]="isRefreshingMarket" title="Refresh live quotes">
                     <svg class="refresh-micro-svg" [class.spin-icon]="isRefreshingMarket" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -326,8 +355,11 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                         [ngClass]="isInWatchlist(s.id) ? 'btn-micro-active' : 'btn-micro-star'"
                         (click)="toggleWatchlist(s)"
                         [title]="isInWatchlist(s.id) ? 'Remove from Watchlist' : 'Add to Watchlist'"
+                        aria-label="Toggle Watchlist"
                       >
-                        {{ isInWatchlist(s.id) ? '★' : '☆' }}
+                        <svg width="12" height="12" viewBox="0 0 24 24" [attr.fill]="isInWatchlist(s.id) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
                       </button>
                       <button class="btn-micro btn-micro-buy" (click)="openTradeForStock(s, 'BUY')">
                         Buy
@@ -367,8 +399,11 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                     <button class="btn-micro btn-micro-buy" (click)="openTradeFromWatchlist(w, 'BUY')">
                       Buy
                     </button>
-                    <button class="btn-micro btn-micro-remove" (click)="removeFromWatchlist(w.stockId)" title="Remove">
-                      ✕
+                    <button class="btn-micro btn-micro-remove" (click)="removeFromWatchlist(w.stockId)" title="Remove from Watchlist" aria-label="Remove from Watchlist">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -384,25 +419,46 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
           <div class="modal-header">
             <div class="modal-title-group">
               <div class="modal-badge-title">
-                <h2>🚀 Market Leaders Live Explorer</h2>
+                <h2>
+                  <svg class="modal-title-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                    <polyline points="16 7 22 7 22 13"></polyline>
+                  </svg>
+                  <span>Market Leaders Live Explorer</span>
+                </h2>
                 <span class="live-pill"><span class="pulse-dot"></span> {{ filteredModalStocks.length }} ASSETS LIVE</span>
               </div>
               <p class="modal-subtitle">Real-time quotes, technical charts, sparklines, and direct instant execution.</p>
             </div>
-            <button class="modal-close-btn" (click)="closeMarketLeadersModal()" title="Close Window">✕</button>
+            <button class="modal-close-btn" (click)="closeMarketLeadersModal()" title="Close Window" aria-label="Close Window">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
 
           <!-- Filter & Search Toolbar -->
           <div class="modal-toolbar">
             <div class="search-input-wrapper">
-              <span class="search-icon">🔍</span>
+              <span class="search-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </span>
               <input
                 type="text"
                 class="search-input"
                 placeholder="Search symbol (e.g. AAPL, NVDA, EUR/USD) or company name..."
                 [(ngModel)]="modalSearchTerm"
               />
-              <button *ngIf="modalSearchTerm" class="clear-search-btn" (click)="modalSearchTerm = ''">✕</button>
+              <button *ngIf="modalSearchTerm" class="clear-search-btn" (click)="modalSearchTerm = ''" aria-label="Clear Search">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
 
             <div class="sector-tabs">
@@ -509,18 +565,28 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                   <td class="text-center">
                     <div class="modal-row-actions">
                       <a [routerLink]="['/market', s.symbol]" (click)="closeMarketLeadersModal()" class="btn-micro btn-micro-chart">
-                        📊 Chart
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                          <polyline points="16 7 22 7 22 13"></polyline>
+                        </svg>
+                        <span>Chart</span>
                       </a>
                       <button class="btn-micro btn-micro-buy" (click)="openTradeForStock(s, 'BUY')">
-                        ⚡ Buy
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        <span>Buy</span>
                       </button>
                       <button
                         class="btn-micro"
                         [ngClass]="isInWatchlist(s.id) ? 'btn-micro-active' : 'btn-micro-star'"
                         (click)="toggleWatchlist(s)"
                         [title]="isInWatchlist(s.id) ? 'Remove from Watchlist' : 'Add to Watchlist'"
+                        aria-label="Toggle Watchlist"
                       >
-                        {{ isInWatchlist(s.id) ? '★' : '☆' }}
+                        <svg width="12" height="12" viewBox="0 0 24 24" [attr.fill]="isInWatchlist(s.id) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
                       </button>
                     </div>
                   </td>
@@ -893,6 +959,13 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       cursor: pointer;
       border: none;
       transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+    .btn-micro svg {
+      flex-shrink: 0;
     }
     .btn-micro-trade {
       background: rgba(56, 189, 248, 0.15);
@@ -1207,6 +1280,14 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-icon {
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .btn:hover .btn-icon {
+      transform: translateY(-1px);
     }
     .btn-primary {
       background-color: #2563eb;

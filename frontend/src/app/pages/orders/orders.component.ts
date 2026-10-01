@@ -29,11 +29,22 @@ import { OrderResponse } from '../../models/order.model';
       </div>
 
       <div *ngIf="!isLoading && orders.length === 0" class="empty-state">
-        <div class="empty-icon">📊</div>
+        <div class="empty-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+            <line x1="2" y1="20" x2="22" y2="20"></line>
+          </svg>
+        </div>
         <h3>No trades executed yet</h3>
         <p>You haven't placed any simulated BUY or SELL orders yet.</p>
         <a routerLink="/market" class="btn btn-outline">
-          Go to Market to Trade
+          <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+            <polyline points="16 7 22 7 22 13"></polyline>
+          </svg>
+          <span>Go to Market to Trade</span>
         </a>
       </div>
 
@@ -232,7 +243,13 @@ import { OrderResponse } from '../../models/order.model';
       cursor: pointer;
       text-decoration: none;
       transition: all 0.15s ease;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+    }
+    .btn-icon {
+      flex-shrink: 0;
     }
     .btn-primary {
       background-color: #2563eb;

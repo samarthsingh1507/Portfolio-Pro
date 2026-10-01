@@ -95,7 +95,12 @@ interface TimeframeOption {
         <!-- Universal Global Live Search Bar -->
         <div class="global-search-container">
           <div class="search-input-wrapper">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
             <input
               type="text"
               [(ngModel)]="searchQuery"
@@ -106,7 +111,12 @@ interface TimeframeOption {
               class="global-search-input"
             />
             <span *ngIf="isSearching" class="search-spinner"></span>
-            <button *ngIf="searchQuery" class="clear-search-btn" (click)="searchQuery = ''; searchResults = []; showSearchDropdown = false">✕</button>
+            <button *ngIf="searchQuery" class="clear-search-btn" (click)="searchQuery = ''; searchResults = []; showSearchDropdown = false" aria-label="Clear Search">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
 
           <!-- Dropdown Results -->
@@ -143,7 +153,7 @@ interface TimeframeOption {
             title="Toggle second-by-second live candlestick animation"
           >
             <span class="pulse-dot" [class.paused]="!isLiveStreaming"></span>
-            <span>{{ isLiveStreaming ? '⚡ LIVE CANDLESTREAM: ACTIVE (1s Ticks)' : '⏸ STREAM PAUSED' }}</span>
+            <span>{{ isLiveStreaming ? 'LIVE CANDLESTREAM: ACTIVE (1s Ticks)' : 'STREAM PAUSED' }}</span>
           </button>
 
           <div class="speed-selector">
@@ -153,7 +163,7 @@ interface TimeframeOption {
               [class.active]="tickIntervalMs === 500"
               (click)="setTickSpeed(500)"
               title="500ms Ultra High Frequency"
-            >⚡ 0.5s</button>
+            >0.5s</button>
             <button
               class="speed-btn"
               [class.active]="tickIntervalMs === 1000"
@@ -179,13 +189,13 @@ interface TimeframeOption {
               class="speed-btn"
               [class.active]="volatilityMultiplier === 2.5"
               (click)="volatilityMultiplier = 2.5"
-            >🔥 High Vol</button>
+            >High Vol</button>
           </div>
         </div>
 
         <div class="engine-right">
           <button class="sound-toggle-btn" (click)="soundEnabled = !soundEnabled" [class.active]="soundEnabled">
-            <span>{{ soundEnabled ? '🔊 Audio: ON' : '🔈 Audio: OFF' }}</span>
+            <span>Audio: {{ soundEnabled ? 'ON' : 'OFF' }}</span>
           </button>
           <div class="trade-stats-badge">
             <span>Live Trades: <strong>{{ liveTradesCount }}</strong></span>
@@ -282,8 +292,10 @@ interface TimeframeOption {
                 [disabled]="isUpdatingWatchlist"
                 (click)="toggleWatchlist()"
               >
-                <span *ngIf="stock.inWatchlist">★ In Watchlist</span>
-                <span *ngIf="!stock.inWatchlist">☆ Add to Watchlist</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" [attr.fill]="stock.inWatchlist ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <span>{{ stock.inWatchlist ? 'In Watchlist' : 'Add to Watchlist' }}</span>
               </button>
 
               <button class="btn btn-buy" (click)="openTrade('BUY')">
@@ -361,10 +373,28 @@ interface TimeframeOption {
 
                   <!-- Interactive Zoom & Pan Controls -->
                   <div class="zoom-controls-group">
-                    <button class="zoom-btn" (click)="zoomIn()" title="Zoom In (or Scroll Up on Chart)">🔍 +</button>
+                    <button class="zoom-btn" (click)="zoomIn()" title="Zoom In (or Scroll Up on Chart)" aria-label="Zoom In">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="11" y1="8" x2="11" y2="14"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                      </svg>
+                    </button>
                     <span class="zoom-level-badge">{{ (zoomLevel * 100) | number:'1.0-0' }}%</span>
-                    <button class="zoom-btn" (click)="zoomOut()" title="Zoom Out (or Scroll Down on Chart)">🔍 −</button>
-                    <button *ngIf="zoomLevel !== 1 || panOffset !== 0" class="zoom-btn zoom-reset-btn" (click)="resetZoom()" title="Reset Zoom to 100%">↺</button>
+                    <button class="zoom-btn" (click)="zoomOut()" title="Zoom Out (or Scroll Down on Chart)" aria-label="Zoom Out">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                      </svg>
+                    </button>
+                    <button *ngIf="zoomLevel !== 1 || panOffset !== 0" class="zoom-btn zoom-reset-btn" (click)="resetZoom()" title="Reset Zoom to 100%" aria-label="Reset Zoom">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                      </svg>
+                    </button>
                   </div>
 
                   <!-- Intraday & Multi-Period Timeframe Selector -->
@@ -391,7 +421,7 @@ interface TimeframeOption {
                     </label>
                     <label class="toggle-label toggle-ai">
                       <input type="checkbox" [(ngModel)]="showAiPrediction" (change)="buildChartPaths()" />
-                      <span class="legend-color ai-box"></span> 🤖 AI Target
+                      <span class="legend-color ai-box"></span> AI Target
                     </label>
 
                     <!-- AI Auto-Pilot ON / OFF Switch Toolbar Button -->
@@ -406,7 +436,7 @@ interface TimeframeOption {
                     </button>
                     
                     <button *ngIf="aiLastActionReport" class="ai-why-toolbar-btn" (click)="openAiExplanationModal()" title="View what the AI did and why">
-                      💡 Why Did AI Do That?
+                      Why Did AI Do That?
                     </button>
                   </div>
                 </div>
@@ -432,13 +462,13 @@ interface TimeframeOption {
                 <!-- AI Active Live Radar Banner Overlay on Graph -->
                 <div *ngIf="aiAutoApplyEnabled" class="chart-ai-radar-banner">
                   <span class="pulsing-ai-dot"></span>
-                  <span class="radar-text">🤖 AI AUTO-PILOT ACTIVE: Monitoring Momentum & Auto-Applying Real-Time Graph Impact</span>
+                  <span class="radar-text">AI AUTO-PILOT ACTIVE: Monitoring Momentum & Auto-Applying Real-Time Graph Impact</span>
                   <button *ngIf="aiLastActionReport" class="radar-inspect-link" (click)="openAiExplanationModal()">[Inspect Last Action & Rationale]</button>
                 </div>
 
                 <!-- Zoom Navigation Hint -->
                 <div class="zoom-status-bar" *ngIf="zoomLevel > 1">
-                  <span>🔍 Zoomed in ({{ (zoomLevel * 100) | number:'1.0-0' }}%) • Click & Drag horizontally to pan history • Scroll wheel to zoom</span>
+                  <span>Zoomed in ({{ (zoomLevel * 100) | number:'1.0-0' }}%) • Click & Drag horizontally to pan history • Scroll wheel to zoom</span>
                 </div>
 
                 <!-- Hover Floating Tooltip -->
@@ -813,7 +843,7 @@ interface TimeframeOption {
               <div *ngIf="aiPrediction" class="ai-prediction-card" [ngClass]="'prediction-' + aiPrediction.patternType.toLowerCase()">
                 <div class="ai-card-header">
                   <div class="ai-title-block">
-                    <span class="ai-robot-badge">🤖 AI CHART PATTERN PREDICTOR</span>
+                    <span class="ai-robot-badge">AI CHART PATTERN PREDICTOR</span>
                     <h3 class="ai-pattern-name">{{ aiPrediction.patternName }}</h3>
                     <span class="pattern-signal-badge" [ngClass]="'signal-' + aiPrediction.actionableSignal.toLowerCase()">
                       {{ aiPrediction.actionableSignal }} • {{ aiPrediction.confidence }}% PROBABILITY
@@ -834,7 +864,7 @@ interface TimeframeOption {
                   <div class="ai-metric-item">
                     <span class="ai-m-label">Protective Risk Stop-Loss</span>
                     <span class="ai-m-value text-red font-mono font-bold">\${{ aiPrediction.projectedStopLoss | number:(isForex ? '1.4-4' : '1.2-2') }}</span>
-                    <span class="ai-m-sub text-red">🛑 Invalidation Level</span>
+                    <span class="ai-m-sub text-red">Invalidation Level</span>
                   </div>
 
                   <div class="ai-metric-item">
@@ -846,12 +876,12 @@ interface TimeframeOption {
 
                 <div class="ai-guidance-container">
                   <div class="guidance-box where-to-invest">
-                    <div class="guidance-title">📍 Where & How to Invest (Execution Strategy):</div>
+                    <div class="guidance-title">Where & How to Invest (Execution Strategy):</div>
                     <p class="guidance-text">{{ aiPrediction.whereToInvest }}</p>
                   </div>
 
                   <div class="guidance-box how-much-to-invest">
-                    <div class="guidance-title">💰 How Much to Invest (Capital Allocation):</div>
+                    <div class="guidance-title">How Much to Invest (Capital Allocation):</div>
                     <p class="guidance-text">{{ aiPrediction.howMuchToInvest }}</p>
                   </div>
                 </div>
@@ -870,10 +900,10 @@ interface TimeframeOption {
 
                   <div class="ai-footer-right">
                     <button *ngIf="aiLastActionReport" class="btn btn-ai-inspect" (click)="openAiExplanationModal()">
-                      💡 Why Did AI Do This?
+                      Why Did AI Do This?
                     </button>
                     <button class="btn btn-ai-apply" (click)="applyAiStrategy(true)">
-                      ⚡ Auto-Apply Strategy Now
+                      Auto-Apply Strategy Now
                     </button>
                   </div>
                 </div>
@@ -959,7 +989,7 @@ interface TimeframeOption {
             <!-- Upgraded Fast 1-Click Live Trading Box (Fractional Shares + Custom Dollar Amount + Custom Price Rate Limit) -->
             <div class="side-panel-card quick-trade-card">
               <div class="panel-header">
-                <span class="panel-title">⚡ Instant Execution & Sizing</span>
+                <span class="panel-title">Instant Execution & Sizing</span>
                 <span class="live-dot-tag"><span class="dot"></span> ACTIVE</span>
               </div>
 
@@ -1092,7 +1122,7 @@ interface TimeframeOption {
             <!-- Live Order Book (Depth of Market) -->
             <div class="side-panel-card orderbook-card">
               <div class="panel-header">
-                <span class="panel-title">📊 Live Order Book (DOM)</span>
+                <span class="panel-title">Live Order Book (DOM)</span>
                 <span class="market-status-mini">REAL-TIME DEPTH</span>
               </div>
 
@@ -1140,7 +1170,7 @@ interface TimeframeOption {
             <div class="side-panel-card tape-card">
               <div class="panel-header">
                 <div class="panel-title-group">
-                  <span class="panel-title">⚡ Live Executions Tape</span>
+                  <span class="panel-title">Live Executions Tape</span>
                   <span class="tape-badge">{{ liveTrades.length }} Recent Trades</span>
                 </div>
                 <div class="vol-ratio-box">
@@ -1181,7 +1211,7 @@ interface TimeframeOption {
                     </span>
                     <span class="tape-size font-mono text-right">{{ trade.size | number }}</span>
                     <span class="tape-trader text-right">
-                      <span *ngIf="trade.isUserOrder" class="user-badge">👑 YOU</span>
+                      <span *ngIf="trade.isUserOrder" class="user-badge">YOU</span>
                       <span *ngIf="!trade.isUserOrder">{{ trade.trader }}</span>
                     </span>
                   </div>
@@ -1247,13 +1277,18 @@ interface TimeframeOption {
           <div class="ai-modal-header" [ngClass]="aiLastActionReport.action === 'BUY' ? 'header-bullish' : 'header-bearish'">
             <div class="ai-m-title-area">
               <div class="ai-modal-badge-row">
-                <span class="ai-robot-badge-large">🤖 AI PREDICTIVE TRADING ENGINE</span>
+                <span class="ai-robot-badge-large">AI PREDICTIVE TRADING ENGINE</span>
                 <span class="ai-live-stamp-tag">LIVE AUDIT REPORT</span>
               </div>
               <h2 class="ai-modal-title">Autonomous Trade Execution & Rationale Breakdown</h2>
               <span class="ai-timestamp">Recorded at: {{ aiLastActionReport.timestamp }} • Asset: {{ symbol }}</span>
             </div>
-            <button class="close-modal-btn" (click)="showAiExplanationModal = false">✕</button>
+            <button class="close-modal-btn" (click)="showAiExplanationModal = false" aria-label="Close Modal">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
 
           <!-- Modal Body -->
@@ -1268,7 +1303,7 @@ interface TimeframeOption {
               <div class="action-summary-card" [ngClass]="aiLastActionReport.action === 'BUY' ? 'action-buy' : 'action-sell'">
                 <div class="action-top-row">
                   <span class="action-hero-badge" [ngClass]="aiLastActionReport.action === 'BUY' ? 'badge-buy' : 'badge-sell'">
-                    {{ aiLastActionReport.action === 'BUY' ? '🟢 EXECUTED AUTO-BUY' : '🔴 EXECUTED AUTO-SELL' }}
+                    {{ aiLastActionReport.action === 'BUY' ? 'EXECUTED AUTO-BUY' : 'EXECUTED AUTO-SELL' }}
                   </span>
                   <span class="pattern-hero-tag">{{ aiLastActionReport.patternName }} ({{ aiLastActionReport.confidence }}% Confidence)</span>
                 </div>
@@ -1293,7 +1328,12 @@ interface TimeframeOption {
                 </div>
 
                 <div class="graph-impact-banner">
-                  <span class="graph-impact-icon">📈</span>
+                  <span class="graph-impact-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                      <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                  </span>
                   <div class="graph-impact-text">
                     <strong>Live Graph Reflection:</strong> Instant simulated market impulse ({{ aiLastActionReport.marketImpact }}) applied to candlestick and pinned directly to the chart tape.
                   </div>
@@ -1311,10 +1351,7 @@ interface TimeframeOption {
               <div class="decision-reasons-list">
                 <div class="decision-reason-card" *ngFor="let reason of aiLastActionReport.reasons; let i = index">
                   <div class="reason-indicator-icon">
-                    <span *ngIf="i === 0">🎯</span>
-                    <span *ngIf="i === 1">⚡</span>
-                    <span *ngIf="i === 2">📊</span>
-                    <span *ngIf="i === 3">⚖️</span>
+                    <span class="reason-num font-mono">{{ i + 1 }}</span>
                   </div>
                   <div class="reason-text-block">
                     <p class="reason-p">{{ reason }}</p>
@@ -1324,11 +1361,11 @@ interface TimeframeOption {
 
               <div class="execution-edge-grid">
                 <div class="edge-col">
-                  <span class="edge-lbl">📍 Execution Horizon & Strategy:</span>
+                  <span class="edge-lbl">Execution Horizon & Strategy:</span>
                   <p class="edge-val">{{ aiLastActionReport.guidance }}</p>
                 </div>
                 <div class="edge-col">
-                  <span class="edge-lbl">⚖️ Calculated Risk/Reward Edge:</span>
+                  <span class="edge-lbl">Calculated Risk/Reward Edge:</span>
                   <p class="edge-val font-mono text-blue font-bold">{{ aiLastActionReport.riskRewardRatio }} Asymmetric Ratio</p>
                 </div>
               </div>
@@ -1345,13 +1382,13 @@ interface TimeframeOption {
             </div>
             <div class="footer-action-buttons">
               <button *ngIf="aiAutoApplyEnabled" class="btn btn-warning-soft" (click)="aiAutoApplyEnabled = false">
-                ⏸ Pause AI Auto-Pilot
+                Pause AI Auto-Pilot
               </button>
               <button *ngIf="!aiAutoApplyEnabled" class="btn btn-success-soft" (click)="aiAutoApplyEnabled = true">
-                ▶ Enable AI Auto-Pilot
+                Enable AI Auto-Pilot
               </button>
               <button class="btn btn-primary" (click)="showAiExplanationModal = false">
-                ✓ Close & Return to Live Chart
+                Close & Return to Live Chart
               </button>
             </div>
           </div>
@@ -3287,9 +3324,22 @@ interface TimeframeOption {
       border: 1px solid #334155;
     }
     .reason-indicator-icon {
-      font-size: 1.1rem;
       flex-shrink: 0;
       margin-top: 0.1rem;
+      display: inline-flex;
+    }
+    .reason-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+      border-radius: 50%;
+      font-size: 0.72rem;
+      font-weight: 700;
     }
     .reason-text-block {
       flex: 1;

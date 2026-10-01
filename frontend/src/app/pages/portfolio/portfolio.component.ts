@@ -291,7 +291,13 @@ import { MarketQuote } from '../../models/market-quote.model';
           <!-- Beginner-Friendly Portfolio Explainer Tips -->
           <div class="beginner-tips-card">
             <div class="tip-header">
-              <span class="tip-sparkle">💡</span>
+              <span class="tip-sparkle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+              </span>
               <h4>Quick Guide for Beginners: How Your Portfolio Works</h4>
             </div>
             <div class="tips-grid">
@@ -779,7 +785,9 @@ import { MarketQuote } from '../../models/market-quote.model';
       gap: 0.6rem;
     }
     .tip-sparkle {
-      font-size: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .tip-header h4 {
       margin: 0;

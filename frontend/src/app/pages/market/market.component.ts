@@ -108,8 +108,12 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
               (click)="searchQuery = ''"
               class="clear-btn"
               title="Clear search"
+              aria-label="Clear search"
             >
-              ✕
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
           </div>
 
@@ -393,7 +397,13 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       border: none;
       color: #64748b;
       cursor: pointer;
-      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem;
+    }
+    .clear-btn:hover {
+      color: #f1f5f9;
     }
     .select-control {
       background: #0f172a;
