@@ -219,7 +219,7 @@ interface TimeframeOption {
         <div class="stock-banner-card" [class.flash-up]="isPriceFlashingUp" [class.flash-down]="isPriceFlashingDown">
           <div class="stock-info">
             <div class="title-row">
-              <span class="symbol-badge" [class.forex-badge]="isForex">{{ stock.symbol }}</span>
+              <span class="symbol-badge" [class.commodity-badge]="isCommodity" [class.forex-badge]="isForex">{{ stock.symbol }}</span>
               <span class="sector-pill">{{ stock.sector }}</span>
               <span *ngIf="technicalData?.rsi14" class="rsi-mini-pill" [ngClass]="getRsiBadgeClass(technicalData?.rsi14)">
                 RSI(14): {{ technicalData?.rsi14 | number:'1.2-2' }} ({{ getRsiCondition(technicalData?.rsi14) }})
@@ -1676,6 +1676,12 @@ interface TimeframeOption {
     .symbol-badge.forex-badge {
       color: #c084fc;
       background: rgba(192, 132, 252, 0.15);
+    }
+    .symbol-badge.commodity-badge {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      box-shadow: 0 0 12px rgba(251, 191, 36, 0.2);
     }
     .sector-pill {
       font-size: 0.75rem;
@@ -3372,6 +3378,7 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
   liveQuote: MarketQuote | null = null;
   technicalData: TechnicalAnalysis | null = null;
   isForex = false;
+  isCommodity = false;
 
   isLoading = true;
   isLoadingTechnical = false;
@@ -3659,7 +3666,8 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
       const sym = params.get('symbol');
       if (sym) {
         this.symbol = sym.toUpperCase();
-        this.isForex = this.symbol.includes('/') || this.symbol.startsWith('USD') || this.symbol.startsWith('EUR') || this.symbol.startsWith('GBP');
+        this.isCommodity = this.symbol.includes('XAU') || this.symbol.includes('XAG') || this.symbol === 'GOLD' || this.symbol === 'SILVER';
+        this.isForex = (this.symbol.includes('/') || this.symbol.startsWith('USD') || this.symbol.startsWith('EUR') || this.symbol.startsWith('GBP')) && !this.isCommodity;
         this.reloadAll();
       }
     });

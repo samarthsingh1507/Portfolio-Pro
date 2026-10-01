@@ -81,12 +81,14 @@ public class MarketService {
         String sym = rawSymbol.trim().toUpperCase();
         return stockRepository.findBySymbolIgnoreCase(sym).orElseGet(() -> {
             boolean isForex = sym.contains("/");
-            String name = isForex ? sym + " Currency Pair" : sym + " Corporation";
-            String sector = isForex ? "Foreign Exchange / Forex" : "Global Equities";
-            BigDecimal defaultPrice = isForex ? new BigDecimal("1.2500") : new BigDecimal("150.00");
-            Long marketCap = isForex ? 0L : 75000000000L;
-            BigDecimal eps = isForex ? BigDecimal.ZERO : new BigDecimal("4.20");
-            BigDecimal peRatio = isForex ? BigDecimal.ZERO : new BigDecimal("24.50");
+            boolean isGold = sym.equals("XAU/USD") || sym.equals("XAUUSD") || sym.equals("GOLD");
+            boolean isSilver = sym.equals("XAG/USD") || sym.equals("XAGUSD") || sym.equals("SILVER");
+            String name = isGold ? "Gold Spot / US Dollar" : (isSilver ? "Silver Spot / US Dollar" : (isForex ? sym + " Currency Pair" : sym + " Corporation"));
+            String sector = (isGold || isSilver) ? "Precious Metals & Commodities" : (isForex ? "Foreign Exchange / Forex" : "Global Equities");
+            BigDecimal defaultPrice = isGold ? new BigDecimal("2658.40") : (isSilver ? new BigDecimal("31.85") : (isForex ? new BigDecimal("1.2500") : new BigDecimal("150.00")));
+            Long marketCap = (isForex || isGold || isSilver) ? 0L : 75000000000L;
+            BigDecimal eps = (isForex || isGold || isSilver) ? BigDecimal.ZERO : new BigDecimal("4.20");
+            BigDecimal peRatio = (isForex || isGold || isSilver) ? BigDecimal.ZERO : new BigDecimal("24.50");
 
             Stock newStock = new Stock(sym, name, defaultPrice, sector, marketCap, eps, peRatio);
             try {
@@ -178,7 +180,12 @@ public class MarketService {
                 new Stock("EUR/GBP", "Euro / British Pound", new BigDecimal("0.8410"), "Foreign Exchange / Forex", 0L, BigDecimal.ZERO, BigDecimal.ZERO),
                 new Stock("EUR/JPY", "Euro / Japanese Yen", new BigDecimal("168.70"), "Foreign Exchange / Forex", 0L, BigDecimal.ZERO, BigDecimal.ZERO),
                 new Stock("GBP/JPY", "British Pound / Japanese Yen", new BigDecimal("198.10"), "Foreign Exchange / Forex", 0L, BigDecimal.ZERO, BigDecimal.ZERO),
-                new Stock("USD/INR", "US Dollar / Indian Rupee", new BigDecimal("83.75"), "Foreign Exchange / Forex", 0L, BigDecimal.ZERO, BigDecimal.ZERO)
+                new Stock("USD/INR", "US Dollar / Indian Rupee", new BigDecimal("83.75"), "Foreign Exchange / Forex", 0L, BigDecimal.ZERO, BigDecimal.ZERO),
+
+                // Major Precious Metals & Commodities
+                new Stock("XAU/USD", "Gold Spot / US Dollar", new BigDecimal("2658.40"), "Precious Metals & Commodities", 0L, BigDecimal.ZERO, BigDecimal.ZERO),
+                new Stock("XAUUSD", "Gold Spot / US Dollar", new BigDecimal("2658.40"), "Precious Metals & Commodities", 0L, BigDecimal.ZERO, BigDecimal.ZERO),
+                new Stock("XAG/USD", "Silver Spot / US Dollar", new BigDecimal("31.85"), "Precious Metals & Commodities", 0L, BigDecimal.ZERO, BigDecimal.ZERO)
         );
 
         List<Stock> stocksToSave = new ArrayList<>();

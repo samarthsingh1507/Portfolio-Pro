@@ -84,11 +84,17 @@ public class AnalysisService {
         int totalPoints = dates.size();
         double target = finalPrice != null ? finalPrice.doubleValue() : (stock.getPrice() != null ? stock.getPrice().doubleValue() : 100.0);
         String sym = stock.getSymbol() != null ? stock.getSymbol().toUpperCase() : "AAPL";
-        boolean isForex = sym.contains("/") || (stock.getSector() != null && stock.getSector().toLowerCase().contains("forex"));
+        boolean isGold = sym.contains("XAU") || sym.equals("GOLD");
+        boolean isSilver = sym.contains("XAG") || sym.equals("SILVER");
+        boolean isForex = (sym.contains("/") || (stock.getSector() != null && stock.getSector().toLowerCase().contains("forex"))) && !isGold && !isSilver;
         int scale = (isForex && target < 20.0) ? 4 : 2;
 
         double startRatio;
-        if (isForex) {
+        if (isGold) {
+            startRatio = 0.68; // Gold 5-year steady appreciation from ~$1,800 to ~$2,658
+        } else if (isSilver) {
+            startRatio = 0.58;
+        } else if (isForex) {
             startRatio = switch (sym) {
                 case "EUR/USD" -> 1.04;
                 case "GBP/USD" -> 1.03;

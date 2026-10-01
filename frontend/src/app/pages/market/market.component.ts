@@ -45,6 +45,13 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
           </button>
           <button
             class="tab-btn"
+            [class.active]="activeTab === 'all' && selectedCategory === 'commodities'"
+            (click)="activeTab = 'all'; selectedCategory = 'commodities'"
+          >
+            🪙 Gold & Metals ({{ commodityCount }})
+          </button>
+          <button
+            class="tab-btn"
             [class.active]="activeTab === 'all' && selectedCategory === 'forex'"
             (click)="activeTab = 'all'; selectedCategory = 'forex'"
           >
@@ -133,14 +140,15 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
             <tbody>
               <tr *ngFor="let stock of filteredStocks" [class.row-flash-up]="flashingSymbols[stock.symbol] === 'up'" [class.row-flash-down]="flashingSymbols[stock.symbol] === 'down'">
                 <td>
-                  <a [routerLink]="['/market', stock.symbol]" class="symbol-badge" [class.forex-badge]="isForex(stock.symbol)">
+                  <a [routerLink]="['/market', stock.symbol]" class="symbol-badge" [class.commodity-badge]="isCommodity(stock.symbol)" [class.forex-badge]="isForex(stock.symbol)">
                     {{ stock.symbol }}
                   </a>
                 </td>
                 <td class="company-name">
                   <div class="name-box">
                     <span>{{ stock.companyName }}</span>
-                    <span *ngIf="isForex(stock.symbol)" class="fx-tag">FOREX</span>
+                    <span *ngIf="isCommodity(stock.symbol)" class="commodity-tag">🪙 GOLD / METALS</span>
+                    <span *ngIf="isForex(stock.symbol)" class="fx-tag">💱 FOREX</span>
                   </div>
                 </td>
                 <td><span class="sector-tag">{{ stock.sector }}</span></td>
@@ -148,7 +156,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
                   <!-- Live or Reference Price with real-time flash -->
                   <div *ngIf="liveQuotes[stock.symbol]" class="quote-table-live">
                     <div class="price-val" [ngClass]="flashingSymbols[stock.symbol] === 'up' ? 'text-green' : (flashingSymbols[stock.symbol] === 'down' ? 'text-red' : '')">
-                      \${{ liveQuotes[stock.symbol].price | number:(isForex(stock.symbol) ? '1.4-4' : '1.2-2') }}
+                      \${{ liveQuotes[stock.symbol].price | number: getPriceFormat(stock.symbol) }}
                     </div>
                     <div
                       class="change-tag"
@@ -160,7 +168,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
 
                   <!-- Reference Price if Quote Pending -->
                   <div *ngIf="!liveQuotes[stock.symbol]" class="price-text">
-                    \${{ stock.price | number:(isForex(stock.symbol) ? '1.4-4' : '1.2-2') }}
+                    \${{ stock.price | number: getPriceFormat(stock.symbol) }}
                   </div>
                 </td>
                 <td class="text-center trend-cell">
@@ -428,6 +436,12 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       color: #c084fc;
       background: rgba(192, 132, 252, 0.12);
     }
+    .symbol-badge.commodity-badge {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.15);
+    }
     .company-name {
       font-weight: 500;
     }
@@ -443,6 +457,15 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       border-radius: 3px;
       background: rgba(192, 132, 252, 0.2);
       color: #c084fc;
+    }
+    .commodity-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.35);
     }
     .sector-tag {
       display: inline-block;
@@ -546,7 +569,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
 export class MarketComponent implements OnInit, OnDestroy {
   stocks: Stock[] = [];
   activeTab: 'all' | 'watchlist' = 'all';
-  selectedCategory: 'all' | 'stocks' | 'forex' = 'all';
+  selectedCategory: 'all' | 'stocks' | 'forex' | 'commodities' = 'all';
   searchQuery = '';
   selectedSector = '';
   isLoading = true;
@@ -570,16 +593,29 @@ export class MarketComponent implements OnInit, OnDestroy {
     public watchlistService: WatchlistService
   ) {}
 
-  get stockCount(): number {
-    return this.stocks.filter(s => !s.symbol.includes('/')).length;
-  }
-
-  get forexCount(): number {
-    return this.stocks.filter(s => s.symbol.includes('/')).length;
+  isCommodity(symbol: string): boolean {
+    const s = (symbol || '').toUpperCase();
+    return s.includes('XAU') || s.includes('XAG') || s === 'GOLD' || s === 'SILVER';
   }
 
   isForex(symbol: string): boolean {
-    return (symbol || '').includes('/');
+    return (symbol || '').includes('/') && !this.isCommodity(symbol);
+  }
+
+  getPriceFormat(symbol: string): string {
+    return this.isForex(symbol) ? '1.4-4' : '1.2-2';
+  }
+
+  get stockCount(): number {
+    return this.stocks.filter(s => !this.isForex(s.symbol) && !this.isCommodity(s.symbol)).length;
+  }
+
+  get forexCount(): number {
+    return this.stocks.filter(s => this.isForex(s.symbol)).length;
+  }
+
+  get commodityCount(): number {
+    return this.stocks.filter(s => this.isCommodity(s.symbol)).length;
   }
 
   ngOnInit(): void {
@@ -774,8 +810,10 @@ export class MarketComponent implements OnInit, OnDestroy {
   get filteredStocks(): Stock[] {
     return this.stocks.filter(stock => {
       const isFx = this.isForex(stock.symbol);
-      if (this.selectedCategory === 'stocks' && isFx) return false;
+      const isComm = this.isCommodity(stock.symbol);
+      if (this.selectedCategory === 'stocks' && (isFx || isComm)) return false;
       if (this.selectedCategory === 'forex' && !isFx) return false;
+      if (this.selectedCategory === 'commodities' && !isComm) return false;
 
       const matchesSearch = !this.searchQuery.trim() ||
         stock.symbol.toLowerCase().includes(this.searchQuery.trim().toLowerCase()) ||

@@ -281,7 +281,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                     <!-- Price Block: Always shows real/live price with status badge -->
                     <div *ngIf="liveQuotes[s.symbol]" class="pop-quote-block">
                       <div class="pop-price-row">
-                        <span class="pop-price">\${{ liveQuotes[s.symbol].price | number:(s.symbol.includes('/') ? '1.4-4' : '1.2-2') }}</span>
+                        <span class="pop-price">\${{ liveQuotes[s.symbol].price | number: getPriceFormat(s.symbol) }}</span>
                         <span
                           class="market-badge-micro"
                           [ngClass]="liveQuotes[s.symbol].marketStatus === 'OPEN' ? 'status-open' : 'status-closed'"
@@ -295,7 +295,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                           class="pop-change"
                           [ngClass]="liveQuotes[s.symbol].change >= 0 ? 'text-green' : 'text-red'"
                         >
-                          {{ liveQuotes[s.symbol].change >= 0 ? '▲ +' : '▼ ' }}\${{ (liveQuotes[s.symbol].change >= 0 ? liveQuotes[s.symbol].change : -liveQuotes[s.symbol].change) | number:(s.symbol.includes('/') ? '1.4-4' : '1.2-2') }}
+                          {{ liveQuotes[s.symbol].change >= 0 ? '▲ +' : '▼ ' }}\${{ (liveQuotes[s.symbol].change >= 0 ? liveQuotes[s.symbol].change : -liveQuotes[s.symbol].change) | number: getPriceFormat(s.symbol) }}
                           ({{ liveQuotes[s.symbol].changePercent | number:'1.2-2' }}%)
                         </span>
                         <span *ngIf="liveQuotes[s.symbol].timestamp" class="pop-timestamp" [title]="'As of ' + (liveQuotes[s.symbol].timestamp | date:'medium')">
@@ -307,7 +307,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                     <!-- Fallback if neither loaded -->
                     <div *ngIf="!liveQuotes[s.symbol] && !quotesLoading[s.symbol]" class="pop-quote-block">
                       <div class="pop-price-row">
-                        <span class="pop-price">\${{ s.price | number:(s.symbol.includes('/') ? '1.4-4' : '1.2-2') }}</span>
+                        <span class="pop-price">\${{ s.price | number: getPriceFormat(s.symbol) }}</span>
                       </div>
                     </div>
 
@@ -477,7 +477,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                   </td>
                   <td class="text-right">
                     <span class="modal-price font-bold">
-                      \${{ (liveQuotes[s.symbol]?.price || s.price) | number:(s.symbol.includes('/') ? '1.4-4' : '1.2-2') }}
+                      \${{ (liveQuotes[s.symbol]?.price || s.price) | number: getPriceFormat(s.symbol) }}
                     </span>
                   </td>
                   <td class="text-right">
@@ -485,7 +485,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                       class="modal-change font-bold"
                       [ngClass]="(liveQuotes[s.symbol]?.change ?? 0) >= 0 ? 'text-green' : 'text-red'"
                     >
-                      {{ (liveQuotes[s.symbol]?.change ?? 0) >= 0 ? '▲ +' : '▼ ' }}\${{ ((liveQuotes[s.symbol]?.change ?? 0) >= 0 ? (liveQuotes[s.symbol]?.change ?? 0) : -(liveQuotes[s.symbol]?.change ?? 0)) | number:(s.symbol.includes('/') ? '1.4-4' : '1.2-2') }}
+                      {{ (liveQuotes[s.symbol]?.change ?? 0) >= 0 ? '▲ +' : '▼ ' }}\${{ ((liveQuotes[s.symbol]?.change ?? 0) >= 0 ? (liveQuotes[s.symbol]?.change ?? 0) : -(liveQuotes[s.symbol]?.change ?? 0)) | number: getPriceFormat(s.symbol) }}
                       ({{ (liveQuotes[s.symbol]?.changePercent ?? 0) | number:'1.2-2' }}%)
                     </span>
                   </td>
@@ -1620,6 +1620,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return isUp
       ? 'M 0,16 Q 14,13 26,8 T 46,10 T 64,3 L 64,22 L 0,22 Z'
       : 'M 0,4 Q 16,9 30,14 T 48,11 T 64,18 L 64,22 L 0,22 Z';
+  }
+
+  isForex(symbol: string): boolean {
+    const s = (symbol || '').toUpperCase();
+    return s.includes('/') && !s.includes('XAU') && !s.includes('XAG') && s !== 'GOLD' && s !== 'SILVER';
+  }
+
+  getPriceFormat(symbol: string): string {
+    return this.isForex(symbol) ? '1.4-4' : '1.2-2';
   }
 
   getSparklineColor(symbol: string): string {
