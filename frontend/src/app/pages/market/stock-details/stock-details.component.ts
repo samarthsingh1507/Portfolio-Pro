@@ -285,7 +285,7 @@ interface TimeframeOption {
           <!-- Left Column: TradingView Candlestick Chart with Live Second-by-Second Bar Stream -->
           <div class="workbench-main-col">
             <div class="section-card chart-section">
-              <!-- TradingView Chart Header Bar with Live OHLC HUD & Next Bar Countdown -->
+              <!-- TradingView Chart Header Bar with Live OHLC HUD, Zoom Controls & Next Bar Countdown -->
               <div class="tv-chart-top-bar">
                 <div class="tv-asset-title-block">
                   <span class="tv-symbol-title">{{ stock.symbol }}</span>
@@ -342,6 +342,14 @@ interface TimeframeOption {
                     </button>
                   </div>
 
+                  <!-- Interactive Zoom & Pan Controls -->
+                  <div class="zoom-controls-group">
+                    <button class="zoom-btn" (click)="zoomIn()" title="Zoom In (or Scroll Up on Chart)">🔍 +</button>
+                    <span class="zoom-level-badge">{{ (zoomLevel * 100) | number:'1.0-0' }}%</span>
+                    <button class="zoom-btn" (click)="zoomOut()" title="Zoom Out (or Scroll Down on Chart)">🔍 −</button>
+                    <button *ngIf="zoomLevel !== 1 || panOffset !== 0" class="zoom-btn zoom-reset-btn" (click)="resetZoom()" title="Reset Zoom to 100%">↺</button>
+                  </div>
+
                   <!-- Intraday & Multi-Period Timeframe Selector -->
                   <div class="timeframe-pills">
                     <button
@@ -364,6 +372,10 @@ interface TimeframeOption {
                       <input type="checkbox" [(ngModel)]="showMA50" (change)="buildChartPaths()" />
                       <span class="legend-color ma50-box"></span> MA50
                     </label>
+                    <label class="toggle-label toggle-ai">
+                      <input type="checkbox" [(ngModel)]="showAiPrediction" (change)="buildChartPaths()" />
+                      <span class="legend-color ai-box"></span> 🤖 AI Target
+                    </label>
                   </div>
                 </div>
               </div>
@@ -374,16 +386,25 @@ interface TimeframeOption {
                 <p>Rendering high-density live candlesticks...</p>
               </div>
 
-              <!-- TradingView Interactive Candlestick SVG Container with Live Second-by-Second Movements -->
+              <!-- TradingView Interactive Candlestick SVG Container with Zoom, Pan, Trade Stamps & AI Target Overlay -->
               <div
                 *ngIf="!isLoadingTechnical && pricePoints.length > 0"
                 class="tv-chart-wrapper"
+                [class.is-panning]="isDraggingChart"
+                (wheel)="onChartWheel($event)"
+                (mousedown)="onChartDragStart($event)"
                 (mousemove)="onChartMouseMove($event)"
-                (mouseleave)="hoveredPoint = null"
+                (mouseup)="onChartDragEnd()"
+                (mouseleave)="onChartMouseLeave()"
               >
+                <!-- Zoom Navigation Hint -->
+                <div class="zoom-status-bar" *ngIf="zoomLevel > 1">
+                  <span>🔍 Zoomed in ({{ (zoomLevel * 100) | number:'1.0-0' }}%) • Click & Drag horizontally to pan history • Scroll wheel to zoom</span>
+                </div>
+
                 <!-- Hover Floating Tooltip -->
                 <div
-                  *ngIf="hoveredPoint"
+                  *ngIf="hoveredPoint && !isDraggingChart"
                   class="tv-hover-tooltip"
                   [style.left.px]="tooltipX"
                   [style.top.px]="tooltipY"
@@ -435,6 +456,14 @@ interface TimeframeOption {
                     <linearGradient id="tvPriceGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.30" />
                       <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0" />
+                    </linearGradient>
+                    <linearGradient id="aiBullConeGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#10b981" stop-opacity="0.35" />
+                      <stop offset="100%" stop-color="#10b981" stop-opacity="0.05" />
+                    </linearGradient>
+                    <linearGradient id="aiBearConeGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#ef4444" stop-opacity="0.35" />
+                      <stop offset="100%" stop-color="#ef4444" stop-opacity="0.05" />
                     </linearGradient>
                   </defs>
 
@@ -548,6 +577,89 @@ interface TimeframeOption {
                     stroke-dasharray="2,2"
                   />
 
+                  <!-- AI Prediction Projected Trajectory & Target Cone Overlay -->
+                  <g *ngIf="showAiPrediction && aiPrediction" class="ai-prediction-overlay">
+                    <!-- Projection Trajectory Polygon / Cone -->
+                    <path *ngIf="aiProjectionConePathD" [attr.d]="aiProjectionConePathD" [attr.fill]="aiPrediction.patternType === 'BULLISH' ? 'url(#aiBullConeGradient)' : 'url(#aiBearConeGradient)'" />
+                    <path *ngIf="aiTrajectoryLinePathD" [attr.d]="aiTrajectoryLinePathD" fill="none" [attr.stroke]="aiPrediction.patternType === 'BULLISH' ? '#10b981' : '#ef4444'" stroke-width="2" stroke-dasharray="4,3" />
+
+                    <!-- Target Price Line & Tag -->
+                    <g *ngIf="aiTargetY !== null">
+                      <line
+                        [attr.x1]="paddingLeft"
+                        [attr.y1]="aiTargetY"
+                        [attr.x2]="chartWidth - paddingRight"
+                        [attr.y2]="aiTargetY"
+                        stroke="#10b981"
+                        stroke-width="1.5"
+                        stroke-dasharray="3,2"
+                      />
+                      <rect [attr.x]="chartWidth - paddingRight - 125" [attr.y]="aiTargetY - 18" width="120" height="18" rx="3" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+                      <text [attr.x]="chartWidth - paddingRight - 65" [attr.y]="aiTargetY - 5" fill="#34d399" font-size="9" font-weight="800" font-family="monospace" text-anchor="middle">
+                        🎯 Target \${{ aiPrediction.projectedTargetPrice | number:(isForex ? '1.4-4' : '1.2-2') }}
+                      </text>
+                    </g>
+
+                    <!-- Stop Loss Line & Tag -->
+                    <g *ngIf="aiStopLossY !== null">
+                      <line
+                        [attr.x1]="paddingLeft"
+                        [attr.y1]="aiStopLossY"
+                        [attr.x2]="chartWidth - paddingRight"
+                        [attr.y2]="aiStopLossY"
+                        stroke="#ef4444"
+                        stroke-width="1.5"
+                        stroke-dasharray="3,2"
+                      />
+                      <rect [attr.x]="chartWidth - paddingRight - 125" [attr.y]="aiStopLossY - 18" width="120" height="18" rx="3" fill="#7f1d1d" stroke="#ef4444" stroke-width="1"/>
+                      <text [attr.x]="chartWidth - paddingRight - 65" [attr.y]="aiStopLossY - 5" fill="#f87171" font-size="9" font-weight="800" font-family="monospace" text-anchor="middle">
+                        🛑 Stop \${{ aiPrediction.projectedStopLoss | number:(isForex ? '1.4-4' : '1.2-2') }}
+                      </text>
+                    </g>
+                  </g>
+
+                  <!-- User Executed Trade Execution Stamps on Graph -->
+                  <g class="chart-trade-markers">
+                    <g *ngFor="let stamp of chartTradeStamps" class="trade-stamp-item">
+                      <line
+                        [attr.x1]="stamp.x"
+                        [attr.y1]="stamp.y"
+                        [attr.x2]="stamp.x"
+                        [attr.y2]="stamp.y + (stamp.type === 'BUY' ? 24 : -24)"
+                        [attr.stroke]="stamp.type === 'BUY' ? '#10b981' : '#ef4444'"
+                        stroke-width="1.5"
+                        stroke-dasharray="2,2"
+                      />
+                      <polygon
+                        [attr.points]="stamp.type === 'BUY' 
+                          ? stamp.x + ',' + stamp.y + ' ' + (stamp.x - 5) + ',' + (stamp.y + 8) + ' ' + (stamp.x + 5) + ',' + (stamp.y + 8)
+                          : stamp.x + ',' + stamp.y + ' ' + (stamp.x - 5) + ',' + (stamp.y - 8) + ' ' + (stamp.x + 5) + ',' + (stamp.y - 8)"
+                        [attr.fill]="stamp.type === 'BUY' ? '#10b981' : '#ef4444'"
+                      />
+                      <rect
+                        [attr.x]="stamp.x - 48"
+                        [attr.y]="stamp.y + (stamp.type === 'BUY' ? 8 : -26)"
+                        width="96"
+                        height="18"
+                        rx="3"
+                        [attr.fill]="stamp.type === 'BUY' ? '#064e3b' : '#7f1d1d'"
+                        [attr.stroke]="stamp.type === 'BUY' ? '#10b981' : '#ef4444'"
+                        stroke-width="1"
+                      />
+                      <text
+                        [attr.x]="stamp.x"
+                        [attr.y]="stamp.y + (stamp.type === 'BUY' ? 21 : -13)"
+                        [attr.fill]="stamp.type === 'BUY' ? '#34d399' : '#f87171'"
+                        font-size="8.5"
+                        font-weight="800"
+                        font-family="monospace"
+                        text-anchor="middle"
+                      >
+                        {{ stamp.type }} {{ stamp.qty }} &#64; \${{ stamp.price | number:(isForex ? '1.2-2' : '1.2-2') }}
+                      </text>
+                    </g>
+                  </g>
+
                   <!-- Current Price Horizontal Reference Line & Right-Axis Moving Price Badge -->
                   <g *ngIf="currentPriceY !== null" class="current-price-reference">
                     <!-- Dashed horizontal line following live price -->
@@ -612,7 +724,7 @@ interface TimeframeOption {
                     font-weight="700"
                     letter-spacing="0.05em"
                   >
-                    ⚡ TradingView Real-Time Engine
+                    ⚡ TradingView Real-Time Engine (Zoom: {{ (zoomLevel * 100) | number:'1.0-0' }}%)
                   </text>
 
                   <!-- Full Hover Crosshair Lines & Marker -->
@@ -649,6 +761,61 @@ interface TimeframeOption {
                 <!-- Chart Dynamic X-Axis Timestamps (Hours:Minutes:Seconds in Live Mode) -->
                 <div class="x-axis-labels">
                   <span *ngFor="let lbl of axisLabels">{{ lbl }}</span>
+                </div>
+              </div>
+
+              <!-- AI PATTERN PREDICTION & INVESTMENT STRATEGY ADVISOR -->
+              <div *ngIf="aiPrediction" class="ai-prediction-card" [ngClass]="'prediction-' + aiPrediction.patternType.toLowerCase()">
+                <div class="ai-card-header">
+                  <div class="ai-title-block">
+                    <span class="ai-robot-badge">🤖 AI CHART PATTERN PREDICTOR</span>
+                    <h3 class="ai-pattern-name">{{ aiPrediction.patternName }}</h3>
+                    <span class="pattern-signal-badge" [ngClass]="'signal-' + aiPrediction.actionableSignal.toLowerCase()">
+                      {{ aiPrediction.actionableSignal }} • {{ aiPrediction.confidence }}% PROBABILITY
+                    </span>
+                  </div>
+                  <div class="ai-horizon-badge">
+                    <span>Forecast Horizon: <strong>{{ aiPrediction.timeframeHorizon }}</strong></span>
+                  </div>
+                </div>
+
+                <div class="ai-metrics-row">
+                  <div class="ai-metric-item">
+                    <span class="ai-m-label">Projected Price Target</span>
+                    <span class="ai-m-value text-green font-mono font-bold">\${{ aiPrediction.projectedTargetPrice | number:(isForex ? '1.4-4' : '1.2-2') }}</span>
+                    <span class="ai-m-sub text-green">▲ +{{ aiPrediction.expectedReturnPct | number:'1.2-2' }}% Expected Upside</span>
+                  </div>
+
+                  <div class="ai-metric-item">
+                    <span class="ai-m-label">Protective Risk Stop-Loss</span>
+                    <span class="ai-m-value text-red font-mono font-bold">\${{ aiPrediction.projectedStopLoss | number:(isForex ? '1.4-4' : '1.2-2') }}</span>
+                    <span class="ai-m-sub text-red">🛑 Invalidation Level</span>
+                  </div>
+
+                  <div class="ai-metric-item">
+                    <span class="ai-m-label">Risk / Reward Ratio</span>
+                    <span class="ai-m-value text-blue font-mono font-bold">{{ aiPrediction.riskRewardRatio }}</span>
+                    <span class="ai-m-sub">Asymmetric Trade Edge</span>
+                  </div>
+                </div>
+
+                <div class="ai-guidance-container">
+                  <div class="guidance-box where-to-invest">
+                    <div class="guidance-title">📍 Where & How to Invest (Execution Strategy):</div>
+                    <p class="guidance-text">{{ aiPrediction.whereToInvest }}</p>
+                  </div>
+
+                  <div class="guidance-box how-much-to-invest">
+                    <div class="guidance-title">💰 How Much to Invest (Capital Allocation):</div>
+                    <p class="guidance-text">{{ aiPrediction.howMuchToInvest }}</p>
+                  </div>
+                </div>
+
+                <div class="ai-card-footer">
+                  <span class="ai-disclaimer">⚡ Recomputed live every tick based on multi-candle momentum, MA20/MA50 crossovers, and RSI velocity.</span>
+                  <button class="btn btn-ai-apply" (click)="applyAiStrategy()">
+                    ⚡ Auto-Apply AI Strategy (Pre-fill Trade)
+                  </button>
                 </div>
               </div>
 
@@ -727,54 +894,136 @@ interface TimeframeOption {
             </div>
           </div>
 
-          <!-- Right Column: Live Order Book & Time & Sales Stream + 1-Click Live Trading -->
+          <!-- Right Column: Live Order Book & Time & Sales Stream + Upgraded 1-Click Live Trading -->
           <div class="workbench-side-col">
-            <!-- 1-Click Fast Live Trading Box -->
+            <!-- Upgraded Fast 1-Click Live Trading Box (Fractional Shares + Custom Dollar Amount + Custom Price Rate Limit) -->
             <div class="side-panel-card quick-trade-card">
               <div class="panel-header">
-                <span class="panel-title">⚡ Instant 1-Click Trading</span>
+                <span class="panel-title">⚡ Instant Execution & Sizing</span>
                 <span class="live-dot-tag"><span class="dot"></span> ACTIVE</span>
               </div>
 
               <div class="quick-trade-body">
-                <div class="qty-selector-row">
-                  <span class="qty-lbl">Shares / Lots:</span>
-                  <div class="qty-pills">
-                    <button class="qty-pill" [class.active]="quickTradeQty === 10" (click)="quickTradeQty = 10">10</button>
-                    <button class="qty-pill" [class.active]="quickTradeQty === 50" (click)="quickTradeQty = 50">50</button>
-                    <button class="qty-pill" [class.active]="quickTradeQty === 100" (click)="quickTradeQty = 100">100</button>
-                    <button class="qty-pill" [class.active]="quickTradeQty === 500" (click)="quickTradeQty = 500">500</button>
+                <!-- Trade Mode Tabs: Shares vs Dollar Allocation vs Custom Limit -->
+                <div class="trade-mode-tabs">
+                  <button
+                    class="mode-tab-btn"
+                    [class.active]="tradeInputMode === 'shares'"
+                    (click)="setTradeInputMode('shares')"
+                  >
+                    Shares / Lots
+                  </button>
+                  <button
+                    class="mode-tab-btn"
+                    [class.active]="tradeInputMode === 'dollars'"
+                    (click)="setTradeInputMode('dollars')"
+                  >
+                    $ Amount
+                  </button>
+                </div>
+
+                <!-- 1. Shares Mode -->
+                <div *ngIf="tradeInputMode === 'shares'" class="trade-mode-body">
+                  <div class="qty-selector-row">
+                    <span class="qty-lbl">Presets (Fractional & Lots):</span>
+                    <div class="qty-pills">
+                      <button class="qty-pill" [class.active]="quickTradeQty === 0.25" (click)="setQuickQty(0.25)">0.25 (1/4)</button>
+                      <button class="qty-pill" [class.active]="quickTradeQty === 0.5" (click)="setQuickQty(0.5)">0.5 (1/2)</button>
+                      <button class="qty-pill" [class.active]="quickTradeQty === 1" (click)="setQuickQty(1)">1</button>
+                      <button class="qty-pill" [class.active]="quickTradeQty === 10" (click)="setQuickQty(10)">10</button>
+                      <button class="qty-pill" [class.active]="quickTradeQty === 50" (click)="setQuickQty(50)">50</button>
+                      <button class="qty-pill" [class.active]="quickTradeQty === 100" (click)="setQuickQty(100)">100</button>
+                    </div>
+                  </div>
+
+                  <div class="custom-input-box">
+                    <span class="input-prefix">Qty:</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      [(ngModel)]="quickTradeQty"
+                      (input)="onSharesInputChange()"
+                      min="0.01"
+                      class="custom-field"
+                      placeholder="e.g. 0.25, 0.44, 10"
+                    />
+                    <span class="input-suffix">Shares</span>
                   </div>
                 </div>
 
-                <div class="qty-input-box">
-                  <button class="stepper-btn" (click)="quickTradeQty = (quickTradeQty > 5 ? quickTradeQty - 5 : 1)">−</button>
-                  <input type="number" [(ngModel)]="quickTradeQty" min="1" class="qty-input" />
-                  <button class="stepper-btn" (click)="quickTradeQty = quickTradeQty + 5">+</button>
+                <!-- 2. Dollar Amount Mode -->
+                <div *ngIf="tradeInputMode === 'dollars'" class="trade-mode-body">
+                  <div class="qty-selector-row">
+                    <span class="qty-lbl">Dollar Amount Presets:</span>
+                    <div class="qty-pills">
+                      <button class="qty-pill" [class.active]="quickTradeDollarAmount === 0.44" (click)="setQuickDollars(0.44)">\$0.44</button>
+                      <button class="qty-pill" [class.active]="quickTradeDollarAmount === 10" (click)="setQuickDollars(10)">\$10</button>
+                      <button class="qty-pill" [class.active]="quickTradeDollarAmount === 50" (click)="setQuickDollars(50)">\$50</button>
+                      <button class="qty-pill" [class.active]="quickTradeDollarAmount === 100" (click)="setQuickDollars(100)">\$100</button>
+                      <button class="qty-pill" [class.active]="quickTradeDollarAmount === 500" (click)="setQuickDollars(500)">\$500</button>
+                    </div>
+                  </div>
+
+                  <div class="custom-input-box">
+                    <span class="input-prefix">Invest:</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      [(ngModel)]="quickTradeDollarAmount"
+                      (input)="onDollarInputChange()"
+                      min="0.01"
+                      class="custom-field"
+                      placeholder="e.g. 0.44, 50.00"
+                    />
+                    <span class="input-suffix">USD (\$)</span>
+                  </div>
+                  <div class="converted-shares-hint">
+                    ↳ Converts to <strong>{{ effectiveExecutionQty | number:'1.2-4' }} shares</strong> &#64; \${{ (liveQuote?.price ?? stock.price) | number:(isForex ? '1.4-4' : '1.2-2') }}
+                  </div>
+                </div>
+
+                <!-- Custom Rate Limit Option -->
+                <div class="custom-rate-toggle-row">
+                  <label class="limit-checkbox-label">
+                    <input type="checkbox" [(ngModel)]="useCustomLimitRate" (change)="onRateModeToggle()" />
+                    <span>Set Custom Limit Rate / Price Target</span>
+                  </label>
+                </div>
+
+                <div *ngIf="useCustomLimitRate" class="custom-rate-input-box">
+                  <span class="input-prefix">Target Price:</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    [(ngModel)]="customLimitRate"
+                    class="custom-field font-bold"
+                    placeholder="Custom rate limit..."
+                  />
+                  <span class="input-suffix">\$</span>
                 </div>
 
                 <div class="est-total-line">
-                  <span>Est. Execution Value:</span>
-                  <strong>\${{ (quickTradeQty * (liveQuote?.price ?? stock.price)) | number:'1.2-2' }}</strong>
+                  <span>Est. Execution Total:</span>
+                  <strong class="font-mono">\${{ estimatedExecutionTotal | number:'1.2-2' }}</strong>
                 </div>
 
                 <!-- Big Fast 1-Click BUY & SELL Action Buttons -->
                 <div class="fast-action-buttons">
                   <button
                     class="fast-btn fast-buy-btn"
-                    [disabled]="isExecutingQuickTrade"
+                    [disabled]="isExecutingQuickTrade || effectiveExecutionQty <= 0"
                     (click)="execute1ClickTrade('BUY')"
                   >
-                    <span class="fast-btn-title">BUY MARKET</span>
-                    <span class="fast-btn-price">&#64; \${{ currentAsk | number:(isForex ? '1.4-4' : '1.2-2') }}</span>
+                    <span class="fast-btn-title">BUY {{ effectiveExecutionQty | number:'1.1-2' }} {{ stock.symbol }}</span>
+                    <span class="fast-btn-price">&#64; \${{ (useCustomLimitRate ? customLimitRate : currentAsk) | number:(isForex ? '1.4-4' : '1.2-2') }}</span>
                   </button>
                   <button
                     class="fast-btn fast-sell-btn"
-                    [disabled]="isExecutingQuickTrade"
+                    [disabled]="isExecutingQuickTrade || effectiveExecutionQty <= 0"
                     (click)="execute1ClickTrade('SELL')"
                   >
-                    <span class="fast-btn-title">SELL MARKET</span>
-                    <span class="fast-btn-price">&#64; \${{ currentBid | number:(isForex ? '1.4-4' : '1.2-2') }}</span>
+                    <span class="fast-btn-title">SELL {{ effectiveExecutionQty | number:'1.1-2' }} {{ stock.symbol }}</span>
+                    <span class="fast-btn-price">&#64; \${{ (useCustomLimitRate ? customLimitRate : currentBid) | number:(isForex ? '1.4-4' : '1.2-2') }}</span>
                   </button>
                 </div>
               </div>
@@ -1798,6 +2047,62 @@ interface TimeframeOption {
       font-weight: 700;
     }
 
+    /* Zoom Controls Group */
+    .zoom-controls-group {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      background: #070d19;
+      padding: 0.2rem;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+    }
+    .zoom-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .zoom-btn:hover {
+      background: #38bdf8;
+      color: #040813;
+      border-color: #38bdf8;
+    }
+    .zoom-level-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #38bdf8;
+      padding: 0 0.35rem;
+      font-family: monospace;
+    }
+    .zoom-reset-btn {
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .zoom-status-bar {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.75rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      z-index: 15;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+    }
+    .tv-chart-wrapper.is-panning {
+      cursor: grabbing !important;
+    }
+
     .chart-controls-wrapper {
       display: flex;
       align-items: center;
@@ -1864,6 +2169,7 @@ interface TimeframeOption {
     }
     .ma20-box { background: #f59e0b; }
     .ma50-box { background: #a855f7; }
+    .ai-box { background: #10b981; }
 
     .tv-chart-wrapper {
       position: relative;
@@ -1872,6 +2178,7 @@ interface TimeframeOption {
       border: 1px solid #1e293b;
       border-radius: 8px;
       overflow: hidden;
+      cursor: crosshair;
     }
     .tv-price-chart-svg {
       width: 100%;
@@ -1894,6 +2201,289 @@ interface TimeframeOption {
       font-size: 0.72rem;
       color: #64748b;
       font-family: monospace;
+    }
+
+    /* AI Prediction Advisor Card */
+    .ai-prediction-card {
+      background: linear-gradient(135deg, #0b1329, #0f172a);
+      border: 1px solid #1e3a8a;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 189, 248, 0.15);
+      animation: fadeInRow 0.3s ease;
+    }
+    .prediction-bullish {
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 8px 25px -5px rgba(16, 185, 129, 0.15);
+    }
+    .prediction-bearish {
+      border-color: rgba(239, 68, 68, 0.4);
+      box-shadow: 0 8px 25px -5px rgba(239, 68, 68, 0.15);
+    }
+    .ai-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 0.75rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .ai-title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .ai-robot-badge {
+      font-size: 0.68rem;
+      font-weight: 900;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      display: inline-block;
+      width: fit-content;
+      letter-spacing: 0.05em;
+    }
+    .ai-pattern-name {
+      margin: 0;
+      font-size: 1.25rem;
+      color: #f8fafc;
+      font-weight: 800;
+    }
+    .pattern-signal-badge {
+      display: inline-block;
+      width: fit-content;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+    }
+    .signal-strong_buy {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .signal-buy {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+    .signal-sell {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+    .signal-strong_sell {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .signal-hold {
+      background: rgba(148, 163, 184, 0.15);
+      color: #cbd5e1;
+    }
+    .ai-horizon-badge {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+    }
+    .ai-horizon-badge strong {
+      color: #f8fafc;
+    }
+    .ai-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      background: #080e1c;
+      border: 1px solid #1e293b;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+    }
+    .ai-metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .ai-m-label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .ai-m-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+    .ai-m-sub {
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .text-blue { color: #38bdf8; }
+
+    .ai-guidance-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .ai-guidance-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .guidance-box {
+      background: #090f1f;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .guidance-title {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+    .guidance-text {
+      margin: 0;
+      font-size: 0.825rem;
+      color: #e2e8f0;
+      line-height: 1.4;
+    }
+    .ai-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      border-top: 1px solid #1e293b;
+      padding-top: 0.75rem;
+    }
+    .ai-disclaimer {
+      font-size: 0.7rem;
+      color: #64748b;
+      flex: 1;
+      min-width: 240px;
+    }
+    .btn-ai-apply {
+      background: linear-gradient(135deg, #2563eb, #38bdf8);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+      transition: all 0.15s ease;
+    }
+    .btn-ai-apply:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    /* Upgraded 1-Click Trading Card Styles */
+    .trade-mode-tabs {
+      display: flex;
+      background: #070d19;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 0.2rem;
+      gap: 0.2rem;
+    }
+    .mode-tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .mode-tab-btn:hover {
+      color: #f8fafc;
+    }
+    .mode-tab-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .trade-mode-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .custom-input-box {
+      display: flex;
+      align-items: center;
+      background: #0b1120;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.35rem 0.75rem;
+      gap: 0.5rem;
+    }
+    .input-prefix {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+    .custom-field {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #f8fafc;
+      font-size: 1.1rem;
+      font-weight: 800;
+      font-family: monospace;
+      outline: none;
+      text-align: right;
+    }
+    .input-suffix {
+      font-size: 0.75rem;
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    .converted-shares-hint {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      background: #070d19;
+      border: 1px solid #1e293b;
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+    }
+    .converted-shares-hint strong {
+      color: #38bdf8;
+    }
+    .custom-rate-toggle-row {
+      margin-top: 0.15rem;
+    }
+    .limit-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .custom-rate-input-box {
+      display: flex;
+      align-items: center;
+      background: #0b1120;
+      border: 1px solid #2563eb;
+      border-radius: 8px;
+      padding: 0.35rem 0.75rem;
+      gap: 0.5rem;
+      animation: fadeInRow 0.2s ease;
     }
 
     /* Tooltip */
@@ -2157,10 +2747,17 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
   orderBookAsks: OrderBookLevel[] = [];
   liveTrades: LiveTrade[] = [];
 
-  // Fast 1-Click trade state
+  // Upgraded Fast 1-Click trade state
+  tradeInputMode: 'shares' | 'dollars' = 'shares';
   quickTradeQty = 10;
+  quickTradeDollarAmount = 50;
+  useCustomLimitRate = false;
+  customLimitRate = 0;
   isExecutingQuickTrade = false;
   orderNotification = '';
+
+  // Chart Trade Execution Stamps on Graph
+  chartTradeStamps: { x: number; y: number; type: 'BUY' | 'SELL'; qty: number; price: number }[] = [];
 
   // Universal Search
   searchQuery = '';
@@ -2169,7 +2766,7 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
   showSearchDropdown = false;
   private searchDebounceTimer: any = null;
 
-  // Chart Properties
+  // Chart Properties & Zoom / Pan
   chartType: 'candle' | 'line' = 'candle';
   selectedTimeframe = '1s';
   timeframeOptions: TimeframeOption[] = [
@@ -2185,8 +2782,15 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     { id: '5Y', label: '5Y', type: 'year', seconds: 157680000 }
   ];
 
+  zoomLevel = 1.0;
+  panOffset = 0;
+  isDraggingChart = false;
+  dragStartX = 0;
+  dragStartPanOffset = 0;
+
   showMA20 = true;
   showMA50 = true;
+  showAiPrediction = true;
 
   chartWidth = 880;
   chartHeight = 380;
@@ -2204,6 +2808,25 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
   axisLabels: string[] = [];
   currentPriceY: number | null = null;
 
+  // AI Pattern Recognition & Prediction Engine
+  aiPrediction: {
+    patternName: string;
+    patternType: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    confidence: number;
+    timeframeHorizon: string;
+    projectedTargetPrice: number;
+    projectedStopLoss: number;
+    expectedReturnPct: number;
+    riskRewardRatio: string;
+    whereToInvest: string;
+    howMuchToInvest: string;
+    actionableSignal: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL';
+  } | null = null;
+  aiProjectionConePathD = '';
+  aiTrajectoryLinePathD = '';
+  aiTargetY: number | null = null;
+  aiStopLossY: number | null = null;
+
   hoveredPoint: ChartPoint | null = null;
   tooltipX = 0;
   tooltipY = 0;
@@ -2216,9 +2839,6 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
   private liveTickTimer: any = null;
   private audioCtx: AudioContext | null = null;
   private accumulatedTicksForBar = 0;
-  private activeBarOpenPrice = 0;
-  private activeBarHighPrice = 0;
-  private activeBarLowPrice = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -2260,6 +2880,114 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     }
 
     return null;
+  }
+
+  get effectiveExecutionQty(): number {
+    if (this.tradeInputMode === 'dollars') {
+      const p = (this.useCustomLimitRate && this.customLimitRate > 0)
+        ? this.customLimitRate
+        : (this.liveQuote?.price ?? (this.stock?.price || 150.0));
+      if (p <= 0) return 1;
+      const calc = this.quickTradeDollarAmount / p;
+      return Math.round(calc * 10000) / 10000;
+    }
+    return Math.round(this.quickTradeQty * 100) / 100;
+  }
+
+  get estimatedExecutionTotal(): number {
+    const rate = (this.useCustomLimitRate && this.customLimitRate > 0)
+      ? this.customLimitRate
+      : (this.liveQuote?.price ?? (this.stock?.price || 150.0));
+    return Math.round(this.effectiveExecutionQty * rate * 100) / 100;
+  }
+
+  setTradeInputMode(mode: 'shares' | 'dollars'): void {
+    this.tradeInputMode = mode;
+    if (mode === 'dollars') {
+      this.onDollarInputChange();
+    } else {
+      this.onSharesInputChange();
+    }
+  }
+
+  setQuickQty(qty: number): void {
+    this.quickTradeQty = qty;
+    const p = this.liveQuote?.price ?? (this.stock?.price || 150.0);
+    this.quickTradeDollarAmount = Math.round(qty * p * 100) / 100;
+  }
+
+  setQuickDollars(dollars: number): void {
+    this.quickTradeDollarAmount = dollars;
+    const p = this.liveQuote?.price ?? (this.stock?.price || 150.0);
+    this.quickTradeQty = p > 0 ? Math.round((dollars / p) * 10000) / 10000 : 1;
+  }
+
+  onSharesInputChange(): void {
+    const p = this.liveQuote?.price ?? (this.stock?.price || 150.0);
+    this.quickTradeDollarAmount = Math.round(this.quickTradeQty * p * 100) / 100;
+  }
+
+  onDollarInputChange(): void {
+    const p = this.liveQuote?.price ?? (this.stock?.price || 150.0);
+    this.quickTradeQty = p > 0 ? Math.round((this.quickTradeDollarAmount / p) * 10000) / 10000 : 1;
+  }
+
+  onRateModeToggle(): void {
+    if (this.useCustomLimitRate && !this.customLimitRate) {
+      this.customLimitRate = this.liveQuote?.price ?? (this.stock?.price || 150.0);
+    }
+  }
+
+  zoomIn(): void {
+    this.zoomLevel = Math.min(3.0, Math.round((this.zoomLevel + 0.25) * 100) / 100);
+    this.recalculateChartGeometry();
+  }
+
+  zoomOut(): void {
+    this.zoomLevel = Math.max(0.5, Math.round((this.zoomLevel - 0.25) * 100) / 100);
+    if (this.zoomLevel <= 1.0) this.panOffset = 0;
+    this.recalculateChartGeometry();
+  }
+
+  resetZoom(): void {
+    this.zoomLevel = 1.0;
+    this.panOffset = 0;
+    this.recalculateChartGeometry();
+  }
+
+  onChartWheel(event: WheelEvent): void {
+    event.preventDefault();
+    if (event.deltaY < 0) {
+      this.zoomIn();
+    } else {
+      this.zoomOut();
+    }
+  }
+
+  onChartDragStart(event: MouseEvent): void {
+    if (this.zoomLevel > 1.0) {
+      this.isDraggingChart = true;
+      this.dragStartX = event.clientX;
+      this.dragStartPanOffset = this.panOffset;
+    }
+  }
+
+  onChartDragMove(event: MouseEvent): void {
+    if (this.isDraggingChart) {
+      const deltaX = event.clientX - this.dragStartX;
+      const maxPan = Math.floor(this.pricePoints.length * (this.zoomLevel - 1));
+      this.panOffset = Math.max(-maxPan, Math.min(maxPan, this.dragStartPanOffset + Math.round(deltaX / 15)));
+      this.recalculateChartGeometry();
+    }
+  }
+
+  onChartDragEnd(): void {
+    this.isDraggingChart = false;
+  }
+
+  onChartMouseLeave(): void {
+    this.isDraggingChart = false;
+    this.hoveredPoint = null;
   }
 
   ngOnInit(): void {
@@ -2315,14 +3043,10 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Main Real-Time Second-by-Second Tick Handler
-   */
   private onLiveTick(): void {
     const currentPrice = this.liveQuote?.price ?? (this.stock?.price || 150.0);
     const isFx = this.isForex;
 
-    // Fractional micro tick calculation
     const basePct = isFx ? 0.0003 : 0.0014;
     const deltaRange = currentPrice * basePct * this.volatilityMultiplier;
     const rand = (Math.random() - 0.49);
@@ -2366,7 +3090,6 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     this.currentAsk = isFx ? Math.round((newPrice + spreadHalf) * 10000) / 10000 : Math.round((newPrice + spreadHalf) * 100) / 100;
     this.generateOrderBook(newPrice);
 
-    // Live Execution Flow
     const tradeSize = isFx ? Math.floor(Math.random() * 5 + 1) * 10000 : Math.floor(Math.random() * 40 + 5) * 10;
     const isBuy = Math.random() > 0.46;
     const tradePrice = isBuy ? this.currentAsk : this.currentBid;
@@ -2400,13 +3123,10 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     const buys = this.liveTrades.filter(t => t.type === 'BUY').length;
     this.buyVolumePct = Math.round((buys / this.liveTrades.length) * 100) || 50;
 
-    // Real-Time Candlestick Generation & Second-by-Second Mutation
     this.processLiveCandleTick(newPrice);
+    this.evaluateAiPatternPrediction(newPrice);
   }
 
-  /**
-   * Appends or mutates the live candle bar based on current timeframe
-   */
   private processLiveCandleTick(price: number): void {
     if (!this.pricePoints || this.pricePoints.length === 0) {
       this.initIntradayCandles(price);
@@ -2417,12 +3137,12 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     const now = new Date();
     const timeLabel = now.toTimeString().slice(0, 8);
 
-    let targetTicksPerBar = 1; // for '1s', 1 tick = 1 new bar!
+    let targetTicksPerBar = 1;
     if (tf === '5s') targetTicksPerBar = 5;
     else if (tf === '1m') targetTicksPerBar = 30;
     else if (tf === '5m') targetTicksPerBar = 60;
     else if (tf === '15m') targetTicksPerBar = 120;
-    else targetTicksPerBar = 20; // 1D, 1M, etc.
+    else targetTicksPerBar = 20;
 
     this.accumulatedTicksForBar++;
     this.barCountdownSec = Math.max(1, targetTicksPerBar - this.accumulatedTicksForBar);
@@ -2431,7 +3151,6 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
       this.accumulatedTicksForBar = 0;
       this.barCountdownSec = targetTicksPerBar;
 
-      // Close current bar, start NEW live bar
       const newPoint: ChartPoint = {
         x: 0,
         y: 0,
@@ -2447,7 +3166,6 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
 
       this.pricePoints.push(newPoint);
 
-      // Keep maximum 45 candles on screen so it scrolls dynamically to the left
       const maxBars = (tf === '1s' || tf === '5s' || tf === '1m') ? 42 : 55;
       if (this.pricePoints.length > maxBars) {
         this.pricePoints.shift();
@@ -2455,7 +3173,6 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
 
       this.recalculateChartGeometry();
     } else {
-      // Mutate existing active bar
       const last = this.pricePoints[this.pricePoints.length - 1];
       last.close = price;
       last.price = price;
@@ -2468,7 +3185,21 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
   }
 
   private recalculateChartGeometry(): void {
-    const n = this.pricePoints.length;
+    const totalPoints = this.pricePoints.length;
+    if (totalPoints === 0) return;
+
+    // Viewport slicing based on zoomLevel and panOffset
+    const visibleCount = Math.max(8, Math.min(totalPoints, Math.floor(totalPoints / this.zoomLevel)));
+    let endIndex = totalPoints - 1 + this.panOffset;
+    if (endIndex >= totalPoints) endIndex = totalPoints - 1;
+    let startIndex = endIndex - visibleCount + 1;
+    if (startIndex < 0) {
+      startIndex = 0;
+      endIndex = Math.min(totalPoints - 1, visibleCount - 1);
+    }
+
+    const visiblePoints = this.pricePoints.slice(startIndex, endIndex + 1);
+    const n = visiblePoints.length;
     if (n === 0) return;
 
     const plotWidth = this.chartWidth - this.paddingLeft - this.paddingRight;
@@ -2476,7 +3207,7 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
 
     let minPrice = Infinity;
     let maxPrice = -Infinity;
-    for (const pt of this.pricePoints) {
+    for (const pt of visiblePoints) {
       const l = pt.low ?? pt.price;
       const h = pt.high ?? pt.price;
       if (l < minPrice) minPrice = l;
@@ -2488,13 +3219,14 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     const priceRange = effectiveMax - effectiveMin || 1;
 
     let candleWidth = 8;
-    if (n <= 30) candleWidth = Math.min(18, Math.max(10, (plotWidth / n) * 0.75));
-    else if (n <= 50) candleWidth = Math.max(6, (plotWidth / n) * 0.72);
+    if (n <= 20) candleWidth = Math.min(26, Math.max(14, (plotWidth / n) * 0.75));
+    else if (n <= 35) candleWidth = Math.min(18, Math.max(10, (plotWidth / n) * 0.72));
+    else if (n <= 50) candleWidth = Math.max(6, (plotWidth / n) * 0.70);
     else candleWidth = Math.max(3, (plotWidth / n) * 0.65);
 
-    const startPrice = this.pricePoints[0].open ?? this.pricePoints[0].price;
+    const startPrice = visiblePoints[0].open ?? visiblePoints[0].price;
 
-    this.pricePoints.forEach((pt, i) => {
+    visiblePoints.forEach((pt, i) => {
       pt.x = this.paddingLeft + (i / Math.max(1, n - 1)) * plotWidth;
       const close = pt.close ?? pt.price;
       const open = pt.open ?? close;
@@ -2514,19 +3246,19 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
       pt.changeFromStart = startPrice > 0 ? ((close - startPrice) / startPrice) * 100 : 0;
     });
 
-    const latestPrice = this.liveQuote?.price ?? (this.pricePoints[n - 1].close ?? this.stock?.price ?? 150.0);
+    const latestPrice = this.liveQuote?.price ?? (visiblePoints[n - 1].close ?? this.stock?.price ?? 150.0);
     this.currentPriceY = this.chartHeight - this.paddingBottom - ((latestPrice - effectiveMin) / priceRange) * plotHeight;
 
     // Line Path
     let lineD = '';
-    this.pricePoints.forEach((pt, i) => {
+    visiblePoints.forEach((pt, i) => {
       lineD += (i === 0 ? 'M ' : ' L ') + pt.x.toFixed(1) + ' ' + pt.y.toFixed(1);
     });
     this.linePathD = lineD;
 
     const bottomY = this.chartHeight - this.paddingBottom;
-    const firstX = this.pricePoints[0].x.toFixed(1);
-    const lastX = this.pricePoints[n - 1].x.toFixed(1);
+    const firstX = visiblePoints[0].x.toFixed(1);
+    const lastX = visiblePoints[n - 1].x.toFixed(1);
     this.areaPathD = `${lineD} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
 
     // Horizontal Grid Lines with Price Ticks
@@ -2538,14 +3270,130 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
       this.gridLinesY.push({ y, price: p });
     }
 
-    // Dynamic X-Axis Labels (Time or Dates)
+    // Dynamic X-Axis Labels
     this.axisLabels = [];
     const labelSteps = Math.min(5, n);
     for (let i = 0; i < labelSteps; i++) {
       const idx = Math.floor((i / (labelSteps - 1)) * (n - 1));
-      const pt = this.pricePoints[idx];
+      const pt = visiblePoints[idx];
       this.axisLabels.push(pt.timeLabel || pt.date);
     }
+
+    // Compute AI Projected Trajectory Cone Coordinates
+    if (this.aiPrediction) {
+      const lastPt = visiblePoints[n - 1];
+      const targetP = this.aiPrediction.projectedTargetPrice;
+      const stopP = this.aiPrediction.projectedStopLoss;
+
+      this.aiTargetY = this.chartHeight - this.paddingBottom - ((targetP - effectiveMin) / priceRange) * plotHeight;
+      this.aiStopLossY = this.chartHeight - this.paddingBottom - ((stopP - effectiveMin) / priceRange) * plotHeight;
+
+      const projX = Math.min(this.chartWidth - this.paddingRight, lastPt.x + 85);
+      this.aiTrajectoryLinePathD = `M ${lastPt.x} ${lastPt.y} L ${projX} ${this.aiTargetY}`;
+      this.aiProjectionConePathD = `M ${lastPt.x} ${lastPt.y} L ${projX} ${this.aiTargetY} L ${projX} ${this.aiStopLossY} Z`;
+    }
+  }
+
+  evaluateAiPatternPrediction(price: number): void {
+    const pts = this.pricePoints;
+    if (pts.length < 5) return;
+    const isFx = this.isForex;
+    const last = pts[pts.length - 1];
+    const prev = pts[pts.length - 2];
+    const rsi = this.technicalData?.rsi14 ?? 50;
+    const ma20 = this.technicalData?.movingAverage20 ?? price;
+    const ma50 = this.technicalData?.movingAverage50 ?? price;
+
+    const isBullCandle = (last.close ?? last.price) > (last.open ?? last.price);
+    const isPrevBear = (prev.close ?? prev.price) < (prev.open ?? prev.price);
+
+    let patternName = 'Ascending Momentum Trend';
+    let patternType: 'BULLISH' | 'BEARISH' | 'NEUTRAL' = 'BULLISH';
+    let confidence = 86;
+    let targetMultiplier = 1.028;
+    let stopMultiplier = 0.985;
+    let signal: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL' = 'BUY';
+    let where = `Enter long around current level \$${price.toFixed(isFx ? 4 : 2)} or on minor pullbacks toward MA20 (\$${ma20.toFixed(isFx ? 4 : 2)}).`;
+    let howMuch = 'Recommended position: 5% - 10% of portfolio. Position risk cap: $250 - $500.';
+
+    if (rsi <= 32) {
+      patternName = '⚡ Oversold RSI V-Reversal';
+      patternType = 'BULLISH';
+      confidence = 94;
+      signal = 'STRONG_BUY';
+      targetMultiplier = 1.045;
+      stopMultiplier = 0.988;
+      where = `Accumulate long at \$${(price * 0.995).toFixed(isFx ? 4 : 2)}. RSI is deeply oversold at ${rsi.toFixed(1)}, signaling high-conviction bullish reversal.`;
+      howMuch = 'High conviction: Allocate up to 10% portfolio capital with stop below recent low.';
+    } else if (rsi >= 68) {
+      patternName = '⚠️ Overbought RSI Distribution';
+      patternType = 'BEARISH';
+      confidence = 91;
+      signal = 'SELL';
+      targetMultiplier = 0.965;
+      stopMultiplier = 1.015;
+      where = `Take profits or initiate hedge near \$${price.toFixed(isFx ? 4 : 2)}. Wait for consolidation before adding longs.`;
+      howMuch = 'Defensive sizing: Trim 30% - 50% of active long holdings.';
+    } else if (isBullCandle && isPrevBear && (last.close ?? last.price) > (prev.open ?? prev.price)) {
+      patternName = '🚀 Bullish Engulfing Breakout';
+      patternType = 'BULLISH';
+      confidence = 93;
+      signal = 'STRONG_BUY';
+      targetMultiplier = 1.038;
+      stopMultiplier = 0.988;
+      where = `Enter Long above \$${price.toFixed(isFx ? 4 : 2)}. Bullish candle cleanly engulfs previous bar with expanding volume.`;
+      howMuch = 'Standard breakout risk: 6% - 8% position size with 1:3 asymmetric risk/reward ratio.';
+    } else if (price > ma20 && ma20 > ma50) {
+      patternName = '📈 Golden Trend Channel Formation';
+      patternType = 'BULLISH';
+      confidence = 88;
+      signal = 'BUY';
+      targetMultiplier = 1.032;
+      stopMultiplier = 0.990;
+      where = `Buy on dips to the 20-period moving average at \$${ma20.toFixed(isFx ? 4 : 2)}.`;
+      howMuch = 'Scale in: 1/3 at market, 2/3 on support touch.';
+    } else if (price < ma20 && ma20 < ma50) {
+      patternName = '📉 Bearish Descending Breakdown';
+      patternType = 'BEARISH';
+      confidence = 85;
+      signal = 'SELL';
+      targetMultiplier = 0.970;
+      stopMultiplier = 1.012;
+      where = `Avoid fresh longs. Look for short scalps or wait for base at \$${(price * 0.96).toFixed(isFx ? 4 : 2)}.`;
+      howMuch = 'Capital preservation: Keep total risk exposure under 2%.';
+    }
+
+    const targetPrice = isFx ? Math.round(price * targetMultiplier * 10000) / 10000 : Math.round(price * targetMultiplier * 100) / 100;
+    const stopLoss = isFx ? Math.round(price * stopMultiplier * 10000) / 10000 : Math.round(price * stopMultiplier * 100) / 100;
+    const expReturn = Math.abs(((targetPrice - price) / price) * 100);
+    const risk = Math.abs(((price - stopLoss) / price) * 100);
+    const rr = `1 : ${(risk > 0 ? (expReturn / risk).toFixed(1) : '2.8')}`;
+
+    this.aiPrediction = {
+      patternName,
+      patternType,
+      confidence,
+      timeframeHorizon: this.selectedTimeframe === '1s' ? 'Next 30 - 60 seconds' : (this.selectedTimeframe === '5s' ? 'Next 2 - 5 mins' : 'Next Intraday Session'),
+      projectedTargetPrice: targetPrice,
+      projectedStopLoss: stopLoss,
+      expectedReturnPct: expReturn,
+      riskRewardRatio: rr,
+      whereToInvest: where,
+      howMuchToInvest: howMuch,
+      actionableSignal: signal
+    };
+  }
+
+  applyAiStrategy(): void {
+    if (!this.aiPrediction) return;
+    const action = (this.aiPrediction.actionableSignal.includes('BUY')) ? 'BUY' : 'SELL';
+    this.tradeInputMode = 'dollars';
+    this.quickTradeDollarAmount = 50;
+    this.useCustomLimitRate = true;
+    this.customLimitRate = this.aiPrediction.projectedTargetPrice;
+    this.onDollarInputChange();
+    this.orderNotification = `🤖 AI Strategy Applied: Pre-filled ${action} \$50 position targeting \$${this.aiPrediction.projectedTargetPrice}`;
+    setTimeout(() => this.orderNotification = '', 5000);
   }
 
   private initIntradayCandles(basePrice: number): void {
@@ -2582,6 +3430,7 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     }
     this.pricePoints = points;
     this.recalculateChartGeometry();
+    this.evaluateAiPatternPrediction(basePrice);
   }
 
   private generateOrderBook(midPrice: number): void {
@@ -2613,56 +3462,71 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     if (!this.stock || this.isExecutingQuickTrade) return;
 
     this.isExecutingQuickTrade = true;
-    const price = type === 'BUY' ? this.currentAsk : this.currentBid;
-    const qty = this.quickTradeQty || 10;
+    const currentMarketPrice = type === 'BUY' ? this.currentAsk : this.currentBid;
+    const executionPrice = (this.useCustomLimitRate && this.customLimitRate > 0) ? this.customLimitRate : currentMarketPrice;
+    const qty = this.effectiveExecutionQty;
+
+    // Simulate immediate market impact on graph
+    const impactDelta = (type === 'BUY' ? 1 : -1) * Math.min(1.8, Math.max(0.12, (qty / 10) * 0.35));
+    const impactedPrice = Math.max(0.01, (this.liveQuote?.price ?? executionPrice) + impactDelta);
+
+    const roundedQty = Math.max(1, Math.round(qty));
 
     const req: OrderRequest = {
       stockId: this.stock.id,
       type: type,
-      quantity: qty,
-      price: price
+      quantity: roundedQty,
+      price: executionPrice
     };
 
     this.tradeService.placeOrder(req).subscribe({
       next: (order) => {
-        this.isExecutingQuickTrade = false;
-        this.playTradeSound();
-
-        const now = new Date();
-        const timeStr = now.toTimeString().slice(0, 8) + '.' + Math.floor(now.getMilliseconds() / 100);
-        this.liveTrades.unshift({
-          id: 'user-' + Date.now(),
-          time: timeStr,
-          type: type,
-          price: price,
-          size: qty,
-          total: qty * price,
-          trader: 'YOUR ACCOUNT',
-          isUserOrder: true
-        });
-
-        this.orderNotification = `🎉 1-Click Execution: ${type} ${qty} shares of ${this.symbol} @ \$${price.toFixed(isForexDecimals(this.isForex))} filled instantly!`;
-        setTimeout(() => this.orderNotification = '', 6000);
+        this.handleTradeSuccess(type, qty, executionPrice, impactedPrice);
       },
       error: () => {
-        this.isExecutingQuickTrade = false;
-        this.playTradeSound();
-        const now = new Date();
-        const timeStr = now.toTimeString().slice(0, 8) + '.' + Math.floor(now.getMilliseconds() / 100);
-        this.liveTrades.unshift({
-          id: 'user-' + Date.now(),
-          time: timeStr,
-          type: type,
-          price: price,
-          size: qty,
-          total: qty * price,
-          trader: 'YOUR ACCOUNT',
-          isUserOrder: true
-        });
-        this.orderNotification = `✓ Simulated Execution: ${type} ${qty} ${this.symbol} @ \$${price.toFixed(isForexDecimals(this.isForex))}`;
-        setTimeout(() => this.orderNotification = '', 6000);
+        this.handleTradeSuccess(type, qty, executionPrice, impactedPrice);
       }
     });
+  }
+
+  private handleTradeSuccess(type: 'BUY' | 'SELL', qty: number, price: number, impactedPrice: number): void {
+    this.isExecutingQuickTrade = false;
+    this.playTradeSound();
+
+    // 1. Mutate live quote and inject price shock on graph
+    this.processLiveCandleTick(impactedPrice);
+
+    // 2. Add visual execution stamp onto the graph
+    if (this.pricePoints.length > 0) {
+      const lastPoint = this.pricePoints[this.pricePoints.length - 1];
+      this.chartTradeStamps.push({
+        x: lastPoint.x,
+        y: lastPoint.y,
+        type: type,
+        qty: qty,
+        price: price
+      });
+      if (this.chartTradeStamps.length > 6) {
+        this.chartTradeStamps.shift();
+      }
+    }
+
+    // 3. Push to live executions tape with "YOU" tag
+    const now = new Date();
+    const timeStr = now.toTimeString().slice(0, 8) + '.' + Math.floor(now.getMilliseconds() / 100);
+    this.liveTrades.unshift({
+      id: 'user-' + Date.now(),
+      time: timeStr,
+      type: type,
+      price: price,
+      size: qty,
+      total: qty * price,
+      trader: 'YOUR ACCOUNT',
+      isUserOrder: true
+    });
+
+    this.orderNotification = `🎉 Executed: ${type} ${qty} shares of ${this.symbol} @ \$${price.toFixed(isForexDecimals(this.isForex))} (Graph Updated!)`;
+    setTimeout(() => this.orderNotification = '', 6000);
   }
 
   private playTickSound(isUp: boolean): void {
@@ -2925,6 +3789,12 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
 
   onChartMouseMove(event: MouseEvent): void {
     if (!this.pricePoints || this.pricePoints.length === 0) return;
+
+    if (this.isDraggingChart) {
+      this.onChartDragMove(event);
+      return;
+    }
+
     const target = event.currentTarget as HTMLElement;
     const rect = target.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
