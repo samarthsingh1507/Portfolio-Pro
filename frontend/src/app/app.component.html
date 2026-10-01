@@ -1,0 +1,163 @@
+<div class="app-layout">
+  <header class="top-nav">
+    <div class="nav-left">
+      <div class="nav-brand">
+        <svg class="logo-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="PortfolioPro Logo">
+          <defs>
+            <linearGradient id="ppNavLogoBg" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1e293b"/>
+              <stop offset="100%" stop-color="#0b1120"/>
+            </linearGradient>
+            <linearGradient id="ppNavLogoBorder" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#2563eb" stop-opacity="0.2"/>
+            </linearGradient>
+            <linearGradient id="ppNavLogoBrand" x1="6" y1="21" x2="22" y2="7" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#2563eb"/>
+              <stop offset="50%" stop-color="#0284c7"/>
+              <stop offset="100%" stop-color="#38bdf8"/>
+            </linearGradient>
+            <linearGradient id="ppNavLogoSurge" x1="11" y1="16" x2="22" y2="6" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#38bdf8"/>
+              <stop offset="100%" stop-color="#a5f3fc"/>
+            </linearGradient>
+          </defs>
+          <rect x="0.75" y="0.75" width="26.5" height="26.5" rx="7" fill="url(#ppNavLogoBg)" stroke="url(#ppNavLogoBorder)" stroke-width="1.2"/>
+          <rect x="6.5" y="6.5" width="3" height="15" rx="1.5" fill="url(#ppNavLogoBrand)"/>
+          <path d="M 9.5 6.5 H 14.5 C 17.26 6.5 19.5 8.5 19.5 11 C 19.5 13.5 17.26 15.5 14.5 15.5 H 9.5" 
+                stroke="url(#ppNavLogoBrand)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 11 16.5 L 21.5 6.2" stroke="url(#ppNavLogoSurge)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M 17 6.2 H 21.5 V 10.7" stroke="url(#ppNavLogoSurge)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <a routerLink="/" (click)="closeMobileMenu()" class="brand-link">PORTFOLIO<strong>PRO</strong></a>
+      </div>
+
+      <!-- Desktop Navigation links for authenticated users -->
+      <nav class="nav-links desktop-only" *ngIf="authService.isAuthenticated()">
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        <a routerLink="/market" routerLinkActive="active">Market</a>
+        <a routerLink="/portfolio" routerLinkActive="active">Portfolio</a>
+        <a routerLink="/orders" routerLinkActive="active">Orders</a>
+        <a routerLink="/analysis" routerLinkActive="active">Analysis</a>
+        <a routerLink="/profile" routerLinkActive="active">Profile</a>
+      </nav>
+    </div>
+
+    <!-- Auth Actions & Mobile Hamburger -->
+    <div class="nav-right">
+      <!-- Animated Theme Toggle Switch -->
+      <button
+        type="button"
+        class="theme-toggle-btn"
+        (click)="themeService.toggleTheme()"
+        [attr.aria-label]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        [title]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+      >
+        <span class="theme-toggle-track" [class.track-light]="!themeService.isDarkMode()">
+          <span class="track-icon track-sun" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+            </svg>
+          </span>
+          <span class="track-icon track-moon" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+          <span class="theme-toggle-thumb" [class.thumb-light]="!themeService.isDarkMode()">
+            <svg *ngIf="themeService.isDarkMode()" class="thumb-icon moon-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg *ngIf="!themeService.isDarkMode()" class="thumb-icon sun-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4" fill="currentColor"></circle>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+            </svg>
+          </span>
+        </span>
+      </button>
+
+      <div class="nav-auth">
+        <ng-container *ngIf="authService.isAuthenticated(); else guestNav">
+          <a routerLink="/profile" (click)="closeMobileMenu()" class="user-chip desktop-only">
+            <span class="avatar-dot"></span>
+            {{ authService.currentUser() || 'User' }}
+          </a>
+          <button class="btn btn-outline-danger desktop-only" (click)="onLogout()">
+            Logout
+          </button>
+        </ng-container>
+
+        <ng-template #guestNav>
+          <a routerLink="/login" routerLinkActive="active" class="btn btn-outline">Login</a>
+          <a routerLink="/register" routerLinkActive="active" class="btn btn-primary">Register</a>
+        </ng-template>
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button
+        *ngIf="authService.isAuthenticated()"
+        class="mobile-menu-toggle"
+        (click)="toggleMobileMenu()"
+        aria-label="Toggle navigation menu"
+      >
+        <span *ngIf="!isMobileMenuOpen">☰</span>
+        <span *ngIf="isMobileMenuOpen">✕</span>
+      </button>
+    </div>
+
+    <!-- Mobile Slide-Down Menu -->
+    <div *ngIf="authService.isAuthenticated() && isMobileMenuOpen" class="mobile-drawer">
+      <div class="mobile-user-row">
+        <div class="mobile-user-info">
+          <span class="avatar-dot"></span>
+          <span class="mobile-username">{{ authService.currentUser() }}</span>
+        </div>
+        <button
+          type="button"
+          class="theme-toggle-btn"
+          (click)="themeService.toggleTheme()"
+          [attr.aria-label]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        >
+          <span class="theme-toggle-track" [class.track-light]="!themeService.isDarkMode()">
+            <span class="track-icon track-sun" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+              </svg>
+            </span>
+            <span class="track-icon track-moon" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+            <span class="theme-toggle-thumb" [class.thumb-light]="!themeService.isDarkMode()">
+              <svg *ngIf="themeService.isDarkMode()" class="thumb-icon moon-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+              <svg *ngIf="!themeService.isDarkMode()" class="thumb-icon sun-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4" fill="currentColor"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+              </svg>
+            </span>
+          </span>
+        </button>
+      </div>
+      <nav class="mobile-nav-links">
+        <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMobileMenu()">Dashboard</a>
+        <a routerLink="/market" routerLinkActive="active" (click)="closeMobileMenu()">Market</a>
+        <a routerLink="/portfolio" routerLinkActive="active" (click)="closeMobileMenu()">Portfolio</a>
+        <a routerLink="/orders" routerLinkActive="active" (click)="closeMobileMenu()">Orders</a>
+        <a routerLink="/analysis" routerLinkActive="active" (click)="closeMobileMenu()">Analysis</a>
+        <a routerLink="/profile" routerLinkActive="active" (click)="closeMobileMenu()">Profile</a>
+        <button class="btn btn-outline-danger btn-mobile-logout" (click)="onLogout()">
+          Log Out
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

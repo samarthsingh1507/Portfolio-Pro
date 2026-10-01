@@ -1,0 +1,21 @@
+# Environment and secrets
+.env
+.env.*
+.env.local
+!*.example
+
+# Maven output
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Logs
+logs/
+*.log

@@ -1,0 +1,467 @@
+/* ==========================================================================
+   PortfolioPro - Global Design System & Theme Engine
+   Dark Mode (Default) & Light Mode with Animated Transitions
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Dark Mode Tokens (Default)
+   -------------------------------------------------------------------------- */
+:root,
+html[data-theme="dark"],
+body.dark-mode {
+  --bg-main: #0b1120;
+  --bg-surface: #0f172a;
+  --bg-surface-elevated: #1e293b;
+  --border-subtle: #1e293b;
+  --border-prominent: #334155;
+  
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-accent: #38bdf8;
+  
+  --positive: #10b981;
+  --positive-light: #34d399;
+  --positive-bg: rgba(16, 185, 129, 0.15);
+  
+  --negative: #ef4444;
+  --negative-light: #f87171;
+  --negative-bg: rgba(239, 68, 68, 0.15);
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-hint: #64748b;
+
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --modal-backdrop: rgba(0, 0, 0, 0.75);
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Light Mode Tokens
+   Crisp, modern, high-contrast fintech aesthetic
+   -------------------------------------------------------------------------- */
+html[data-theme="light"],
+body.light-mode {
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f1f5f9;
+  --border-subtle: #e2e8f0;
+  --border-prominent: #cbd5e1;
+  
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-accent: #0284c7;
+  
+  --positive: #059669;
+  --positive-light: #10b981;
+  --positive-bg: rgba(16, 185, 129, 0.12);
+  
+  --negative: #dc2626;
+  --negative-light: #ef4444;
+  --negative-bg: rgba(239, 68, 68, 0.12);
+  
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-hint: #94a3b8;
+
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --modal-backdrop: rgba(15, 23, 42, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Global Theme Transition Animation
+   Fired during theme toggle for silky-smooth 400ms transition
+   -------------------------------------------------------------------------- */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              fill 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-delay: 0s !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: var(--bg-main);
+  color: var(--text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-prominent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-hint);
+}
+
+/* Base Typography */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+a {
+  color: var(--primary-accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--primary-hover);
+  text-decoration: none;
+}
+
+/* Form Controls & Buttons resets */
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+/* Tables universal overflow safety */
+table {
+  border-collapse: collapse;
+}
+
+img, svg {
+  vertical-align: middle;
+}
+
+/* ==========================================================================
+   Light Mode Theme Overrides
+   ========================================================================== */
+
+/* Layout & Top Navigation */
+body.light-mode .app-layout {
+  background-color: var(--bg-main);
+  color: var(--text-secondary);
+}
+
+body.light-mode .top-nav {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .brand-link {
+  color: var(--text-primary);
+}
+
+body.light-mode .brand-link strong {
+  color: var(--primary-accent);
+}
+
+body.light-mode .nav-links a {
+  color: var(--text-muted);
+}
+
+body.light-mode .nav-links a:hover {
+  color: var(--text-primary);
+}
+
+body.light-mode .nav-links a.active {
+  color: var(--primary-accent);
+  border-bottom-color: var(--primary-accent);
+}
+
+body.light-mode .user-chip {
+  background-color: #f1f5f9;
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+body.light-mode .user-chip:hover {
+  border-color: var(--primary-accent);
+  color: var(--primary-accent);
+}
+
+body.light-mode .mobile-menu-toggle {
+  color: var(--text-primary);
+}
+
+body.light-mode .mobile-drawer {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .mobile-user-row {
+  border-bottom-color: var(--border-subtle);
+}
+
+body.light-mode .mobile-username {
+  color: var(--primary-accent);
+}
+
+body.light-mode .mobile-nav-links a {
+  color: var(--text-secondary);
+  border-bottom-color: var(--border-subtle);
+}
+
+body.light-mode .mobile-nav-links a:hover,
+body.light-mode .mobile-nav-links a.active {
+  color: var(--primary-accent);
+}
+
+/* Card Surfaces across All Pages */
+body.light-mode .state-card,
+body.light-mode .stat-card,
+body.light-mode .dashboard-card,
+body.light-mode .stock-banner-card,
+body.light-mode .holding-card,
+body.light-mode .watchlist-card,
+body.light-mode .analysis-card,
+body.light-mode .orders-card,
+body.light-mode .table-card,
+body.light-mode .loading-state,
+body.light-mode .empty-state,
+body.light-mode .auth-card,
+body.light-mode .profile-card,
+body.light-mode .metric-box,
+body.light-mode .indicator-card,
+body.light-mode .chart-container,
+body.light-mode .summary-card,
+body.light-mode .card {
+  background: #ffffff !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* Headings and Values in Light Mode */
+body.light-mode .stat-value,
+body.light-mode .card-header h3,
+body.light-mode .stock-name,
+body.light-mode .holding-name,
+body.light-mode .auth-header h2,
+body.light-mode .dashboard-header h1,
+body.light-mode .profile-header h2,
+body.light-mode .section-title,
+body.light-mode .empty-state h3,
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4 {
+  color: var(--text-primary) !important;
+}
+
+/* Secondary & Muted Text in Light Mode */
+body.light-mode .stat-label,
+body.light-mode .card-sub,
+body.light-mode .subtitle,
+body.light-mode .company-sub,
+body.light-mode .stat-hint,
+body.light-mode .empty-box,
+body.light-mode .empty-box p,
+body.light-mode .empty-state p,
+body.light-mode .form-label,
+body.light-mode .auth-header p,
+body.light-mode .auth-footer p,
+body.light-mode .metric-label,
+body.light-mode .label {
+  color: var(--text-muted) !important;
+}
+
+body.light-mode .card-header {
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+/* Badges & Pills */
+body.light-mode .symbol-badge,
+body.light-mode .symbol-pill {
+  background-color: #f1f5f9 !important;
+  color: #0284c7 !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-mode .sector-pill {
+  background-color: rgba(2, 132, 199, 0.08) !important;
+  color: #0284c7 !important;
+  border-color: rgba(2, 132, 199, 0.25) !important;
+}
+
+/* Performance Pills */
+body.light-mode .pill-green {
+  background: rgba(5, 150, 105, 0.1) !important;
+  border-color: rgba(5, 150, 105, 0.3) !important;
+  color: #059669 !important;
+}
+
+body.light-mode .pill-red {
+  background: rgba(220, 38, 38, 0.1) !important;
+  border-color: rgba(220, 38, 38, 0.3) !important;
+  color: #dc2626 !important;
+}
+
+body.light-mode .text-green {
+  color: #059669 !important;
+}
+
+body.light-mode .text-red {
+  color: #dc2626 !important;
+}
+
+/* Tables in Light Mode */
+body.light-mode table th,
+body.light-mode .market-table th,
+body.light-mode .orders-table th,
+body.light-mode .holdings-table th {
+  background-color: #f8fafc !important;
+  color: var(--text-muted) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+
+body.light-mode table td,
+body.light-mode .market-table td,
+body.light-mode .orders-table td,
+body.light-mode .holdings-table td {
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: var(--text-primary) !important;
+}
+
+body.light-mode table tr:hover td,
+body.light-mode .market-table tr:hover td,
+body.light-mode .orders-table tr:hover td,
+body.light-mode .holdings-table tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* Form Controls & Inputs */
+body.light-mode input[type="text"],
+body.light-mode input[type="password"],
+body.light-mode input[type="number"],
+body.light-mode input[type="email"],
+body.light-mode select,
+body.light-mode .search-input,
+body.light-mode .select-control,
+body.light-mode .form-input,
+body.light-mode .form-control {
+  background-color: #ffffff !important;
+  border: 1px solid var(--border-prominent) !important;
+  color: var(--text-primary) !important;
+}
+
+body.light-mode input::placeholder,
+body.light-mode .search-input::placeholder {
+  color: var(--text-hint) !important;
+}
+
+body.light-mode input:focus,
+body.light-mode select:focus,
+body.light-mode .search-input:focus,
+body.light-mode .form-input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* Buttons in Light Mode */
+body.light-mode .btn-outline {
+  border-color: var(--border-prominent) !important;
+  color: var(--text-secondary) !important;
+}
+
+body.light-mode .btn-outline:hover {
+  background-color: #f1f5f9 !important;
+  color: var(--text-primary) !important;
+  border-color: #94a3b8 !important;
+}
+
+/* Trade Modal in Light Mode */
+body.light-mode .trade-modal-backdrop,
+body.light-mode .modal-backdrop {
+  background: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+body.light-mode .trade-modal {
+  background: #ffffff !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .modal-header {
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+body.light-mode .close-btn {
+  color: var(--text-muted) !important;
+}
+
+body.light-mode .close-btn:hover {
+  color: var(--text-primary) !important;
+}
+
+body.light-mode .order-summary,
+body.light-mode .summary-row,
+body.light-mode .holding-info-box {
+  background: #f8fafc !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+body.light-mode .qty-btn {
+  background: #f1f5f9 !important;
+  border-color: var(--border-prominent) !important;
+  color: var(--text-primary) !important;
+}
+
+body.light-mode .qty-btn:hover {
+  background: #e2e8f0 !important;
+}
+
+body.light-mode .toggle-btn:not(.active) {
+  background: #f1f5f9 !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* SVGs & Chart Gridlines in Light Mode */
+body.light-mode svg line[stroke="#1e293b"],
+body.light-mode svg line[stroke="#334155"],
+body.light-mode .chart-grid line {
+  stroke: #e2e8f0 !important;
+}
+
+body.light-mode svg text[fill="#94a3b8"],
+body.light-mode svg text[fill="#64748b"],
+body.light-mode .chart-axis text {
+  fill: #64748b !important;
+}
+
+body.light-mode .crosshair-line {
+  stroke: #64748b !important;
+}
+
+body.light-mode .chart-tooltip {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
