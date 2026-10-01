@@ -31,6 +31,23 @@ export interface OrderBookLevel {
   depthPercent: number;
 }
 
+export interface AiDecisionReport {
+  timestamp: string;
+  action: 'BUY' | 'SELL';
+  amount: number;
+  qty: number;
+  price: number;
+  targetPrice: number;
+  stopLoss: number;
+  upsidePct: number;
+  patternName: string;
+  confidence: number;
+  reasons: string[];
+  guidance: string;
+  riskRewardRatio: string;
+  marketImpact: string;
+}
+
 interface ChartPoint {
   x: number;
   y: number;
@@ -376,6 +393,21 @@ interface TimeframeOption {
                       <input type="checkbox" [(ngModel)]="showAiPrediction" (change)="buildChartPaths()" />
                       <span class="legend-color ai-box"></span> 🤖 AI Target
                     </label>
+
+                    <!-- AI Auto-Pilot ON / OFF Switch Toolbar Button -->
+                    <button
+                      class="ai-autopilot-btn"
+                      [class.active]="aiAutoApplyEnabled"
+                      (click)="toggleAiAutoApply()"
+                      [title]="aiAutoApplyEnabled ? 'AI Auto-Pilot ON: Auto-executing high conviction predictions with live graph impacts' : 'Turn ON AI Auto-Pilot to autonomously trade chart patterns'"
+                    >
+                      <span class="ai-ap-dot" [class.active]="aiAutoApplyEnabled"></span>
+                      <span>AI Auto-Pilot: <strong>{{ aiAutoApplyEnabled ? 'ON' : 'OFF' }}</strong></span>
+                    </button>
+                    
+                    <button *ngIf="aiLastActionReport" class="ai-why-toolbar-btn" (click)="openAiExplanationModal()" title="View what the AI did and why">
+                      💡 Why Did AI Do That?
+                    </button>
                   </div>
                 </div>
               </div>
@@ -397,6 +429,13 @@ interface TimeframeOption {
                 (mouseup)="onChartDragEnd()"
                 (mouseleave)="onChartMouseLeave()"
               >
+                <!-- AI Active Live Radar Banner Overlay on Graph -->
+                <div *ngIf="aiAutoApplyEnabled" class="chart-ai-radar-banner">
+                  <span class="pulsing-ai-dot"></span>
+                  <span class="radar-text">🤖 AI AUTO-PILOT ACTIVE: Monitoring Momentum & Auto-Applying Real-Time Graph Impact</span>
+                  <button *ngIf="aiLastActionReport" class="radar-inspect-link" (click)="openAiExplanationModal()">[Inspect Last Action & Rationale]</button>
+                </div>
+
                 <!-- Zoom Navigation Hint -->
                 <div class="zoom-status-bar" *ngIf="zoomLevel > 1">
                   <span>🔍 Zoomed in ({{ (zoomLevel * 100) | number:'1.0-0' }}%) • Click & Drag horizontally to pan history • Scroll wheel to zoom</span>
@@ -618,44 +657,50 @@ interface TimeframeOption {
                     </g>
                   </g>
 
-                  <!-- User Executed Trade Execution Stamps on Graph -->
+                  <!-- User Executed & AI Autonomous Trade Execution Stamps on Graph -->
                   <g class="chart-trade-markers">
-                    <g *ngFor="let stamp of chartTradeStamps" class="trade-stamp-item">
+                    <g
+                      *ngFor="let stamp of chartTradeStamps"
+                      class="trade-stamp-item"
+                      [class.is-ai-stamp]="stamp.isAiTrade"
+                      (click)="stamp.isAiTrade && stamp.report ? openAiExplanationModal(stamp.report) : null"
+                      [style.cursor]="stamp.isAiTrade ? 'pointer' : 'default'"
+                    >
                       <line
                         [attr.x1]="stamp.x"
                         [attr.y1]="stamp.y"
                         [attr.x2]="stamp.x"
-                        [attr.y2]="stamp.y + (stamp.type === 'BUY' ? 24 : -24)"
-                        [attr.stroke]="stamp.type === 'BUY' ? '#10b981' : '#ef4444'"
-                        stroke-width="1.5"
+                        [attr.y2]="stamp.y + (stamp.type === 'BUY' ? (stamp.isAiTrade ? 28 : 24) : (stamp.isAiTrade ? -28 : -24))"
+                        [attr.stroke]="stamp.isAiTrade ? '#38bdf8' : (stamp.type === 'BUY' ? '#10b981' : '#ef4444')"
+                        [attr.stroke-width]="stamp.isAiTrade ? 1.8 : 1.5"
                         stroke-dasharray="2,2"
                       />
                       <polygon
                         [attr.points]="stamp.type === 'BUY' 
                           ? stamp.x + ',' + stamp.y + ' ' + (stamp.x - 5) + ',' + (stamp.y + 8) + ' ' + (stamp.x + 5) + ',' + (stamp.y + 8)
                           : stamp.x + ',' + stamp.y + ' ' + (stamp.x - 5) + ',' + (stamp.y - 8) + ' ' + (stamp.x + 5) + ',' + (stamp.y - 8)"
-                        [attr.fill]="stamp.type === 'BUY' ? '#10b981' : '#ef4444'"
+                        [attr.fill]="stamp.isAiTrade ? '#38bdf8' : (stamp.type === 'BUY' ? '#10b981' : '#ef4444')"
                       />
                       <rect
-                        [attr.x]="stamp.x - 48"
+                        [attr.x]="stamp.x - (stamp.isAiTrade ? 60 : 48)"
                         [attr.y]="stamp.y + (stamp.type === 'BUY' ? 8 : -26)"
-                        width="96"
+                        [attr.width]="stamp.isAiTrade ? 120 : 96"
                         height="18"
                         rx="3"
-                        [attr.fill]="stamp.type === 'BUY' ? '#064e3b' : '#7f1d1d'"
-                        [attr.stroke]="stamp.type === 'BUY' ? '#10b981' : '#ef4444'"
-                        stroke-width="1"
+                        [attr.fill]="stamp.isAiTrade ? '#0f172a' : (stamp.type === 'BUY' ? '#064e3b' : '#7f1d1d')"
+                        [attr.stroke]="stamp.isAiTrade ? '#38bdf8' : (stamp.type === 'BUY' ? '#10b981' : '#ef4444')"
+                        [attr.stroke-width]="stamp.isAiTrade ? 1.4 : 1"
                       />
                       <text
                         [attr.x]="stamp.x"
                         [attr.y]="stamp.y + (stamp.type === 'BUY' ? 21 : -13)"
-                        [attr.fill]="stamp.type === 'BUY' ? '#34d399' : '#f87171'"
+                        [attr.fill]="stamp.isAiTrade ? '#38bdf8' : (stamp.type === 'BUY' ? '#34d399' : '#f87171')"
                         font-size="8.5"
                         font-weight="800"
                         font-family="monospace"
                         text-anchor="middle"
                       >
-                        {{ stamp.type }} {{ stamp.qty }} &#64; \${{ stamp.price | number:(isForex ? '1.2-2' : '1.2-2') }}
+                        {{ stamp.isAiTrade ? '🤖 AI ' : '' }}{{ stamp.type }} {{ stamp.qty }} &#64; \${{ stamp.price | number:(isForex ? '1.2-2' : '1.2-2') }}
                       </text>
                     </g>
                   </g>
@@ -812,10 +857,25 @@ interface TimeframeOption {
                 </div>
 
                 <div class="ai-card-footer">
-                  <span class="ai-disclaimer">⚡ Recomputed live every tick based on multi-candle momentum, MA20/MA50 crossovers, and RSI velocity.</span>
-                  <button class="btn btn-ai-apply" (click)="applyAiStrategy()">
-                    ⚡ Auto-Apply AI Strategy (Pre-fill Trade)
-                  </button>
+                  <div class="ai-footer-left">
+                    <label class="ai-toggle-switch-wrapper">
+                      <input type="checkbox" [(ngModel)]="aiAutoApplyEnabled" (change)="onAiAutoApplyToggleChange()" />
+                      <span class="ai-toggle-slider"></span>
+                    </label>
+                    <div class="ai-toggle-text-block">
+                      <span class="ai-toggle-title">AI Auto-Pilot & Graph Execution: <strong>{{ aiAutoApplyEnabled ? 'ON' : 'OFF' }}</strong></span>
+                      <span class="ai-toggle-subtitle">{{ aiAutoApplyEnabled ? 'Autonomously applying high probability signals with live chart stamps' : 'Enable to auto-execute chart patterns & simulate real-time graph impacts' }}</span>
+                    </div>
+                  </div>
+
+                  <div class="ai-footer-right">
+                    <button *ngIf="aiLastActionReport" class="btn btn-ai-inspect" (click)="openAiExplanationModal()">
+                      💡 Why Did AI Do This?
+                    </button>
+                    <button class="btn btn-ai-apply" (click)="applyAiStrategy(true)">
+                      ⚡ Auto-Apply Strategy Now
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1179,6 +1239,124 @@ interface TimeframeOption {
         (close)="showTradeModal = false"
         (orderPlaced)="onOrderSuccess($event)"
       ></app-trade-form>
+
+      <!-- AI DECISION & ACTION EXPLANATION POP-UP MODAL -->
+      <div *ngIf="showAiExplanationModal && aiLastActionReport" class="modal-overlay" (click)="showAiExplanationModal = false">
+        <div class="modal-content ai-explanation-dialog" (click)="$event.stopPropagation()">
+          <!-- Modal Header -->
+          <div class="ai-modal-header" [ngClass]="aiLastActionReport.action === 'BUY' ? 'header-bullish' : 'header-bearish'">
+            <div class="ai-m-title-area">
+              <div class="ai-modal-badge-row">
+                <span class="ai-robot-badge-large">🤖 AI PREDICTIVE TRADING ENGINE</span>
+                <span class="ai-live-stamp-tag">LIVE AUDIT REPORT</span>
+              </div>
+              <h2 class="ai-modal-title">Autonomous Trade Execution & Rationale Breakdown</h2>
+              <span class="ai-timestamp">Recorded at: {{ aiLastActionReport.timestamp }} • Asset: {{ symbol }}</span>
+            </div>
+            <button class="close-modal-btn" (click)="showAiExplanationModal = false">✕</button>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="ai-modal-body">
+            <!-- 1. WHAT THE AI DID -->
+            <div class="ai-audit-section">
+              <div class="audit-section-header">
+                <span class="section-badge-num">1</span>
+                <h3>WHAT THE AI DID (ACTION TAKEN)</h3>
+              </div>
+
+              <div class="action-summary-card" [ngClass]="aiLastActionReport.action === 'BUY' ? 'action-buy' : 'action-sell'">
+                <div class="action-top-row">
+                  <span class="action-hero-badge" [ngClass]="aiLastActionReport.action === 'BUY' ? 'badge-buy' : 'badge-sell'">
+                    {{ aiLastActionReport.action === 'BUY' ? '🟢 EXECUTED AUTO-BUY' : '🔴 EXECUTED AUTO-SELL' }}
+                  </span>
+                  <span class="pattern-hero-tag">{{ aiLastActionReport.patternName }} ({{ aiLastActionReport.confidence }}% Confidence)</span>
+                </div>
+
+                <div class="action-metrics-grid">
+                  <div class="act-card">
+                    <span class="act-card-lbl">Allocated Position:</span>
+                    <strong class="act-card-val font-mono">\${{ aiLastActionReport.amount | number:'1.2-2' }} ({{ aiLastActionReport.qty }} shares)</strong>
+                  </div>
+                  <div class="act-card">
+                    <span class="act-card-lbl">Execution Price:</span>
+                    <strong class="act-card-val font-mono">\${{ aiLastActionReport.price | number:(isForex ? '1.4-4' : '1.2-2') }}</strong>
+                  </div>
+                  <div class="act-card">
+                    <span class="act-card-lbl">Projected Target:</span>
+                    <strong class="act-card-val text-green font-mono">\${{ aiLastActionReport.targetPrice | number:(isForex ? '1.4-4' : '1.2-2') }} (+{{ aiLastActionReport.upsidePct | number:'1.2-2' }}%)</strong>
+                  </div>
+                  <div class="act-card">
+                    <span class="act-card-lbl">Protective Stop-Loss:</span>
+                    <strong class="act-card-val text-red font-mono">\${{ aiLastActionReport.stopLoss | number:(isForex ? '1.4-4' : '1.2-2') }}</strong>
+                  </div>
+                </div>
+
+                <div class="graph-impact-banner">
+                  <span class="graph-impact-icon">📈</span>
+                  <div class="graph-impact-text">
+                    <strong>Live Graph Reflection:</strong> Instant simulated market impulse ({{ aiLastActionReport.marketImpact }}) applied to candlestick and pinned directly to the chart tape.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. WHY THE AI DID THIS -->
+            <div class="ai-audit-section">
+              <div class="audit-section-header">
+                <span class="section-badge-num">2</span>
+                <h3>WHY THE AI DID THIS (DECISION LOGIC & EVIDENCE)</h3>
+              </div>
+
+              <div class="decision-reasons-list">
+                <div class="decision-reason-card" *ngFor="let reason of aiLastActionReport.reasons; let i = index">
+                  <div class="reason-indicator-icon">
+                    <span *ngIf="i === 0">🎯</span>
+                    <span *ngIf="i === 1">⚡</span>
+                    <span *ngIf="i === 2">📊</span>
+                    <span *ngIf="i === 3">⚖️</span>
+                  </div>
+                  <div class="reason-text-block">
+                    <p class="reason-p">{{ reason }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="execution-edge-grid">
+                <div class="edge-col">
+                  <span class="edge-lbl">📍 Execution Horizon & Strategy:</span>
+                  <p class="edge-val">{{ aiLastActionReport.guidance }}</p>
+                </div>
+                <div class="edge-col">
+                  <span class="edge-lbl">⚖️ Calculated Risk/Reward Edge:</span>
+                  <p class="edge-val font-mono text-blue font-bold">{{ aiLastActionReport.riskRewardRatio }} Asymmetric Ratio</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="ai-modal-footer">
+            <div class="footer-status-pill">
+              <span>Auto-Pilot Status: </span>
+              <strong [class.text-green]="aiAutoApplyEnabled" [class.text-amber]="!aiAutoApplyEnabled">
+                {{ aiAutoApplyEnabled ? '● ACTIVE (Autonomously Trading)' : '○ PAUSED (Manual Mode)' }}
+              </strong>
+            </div>
+            <div class="footer-action-buttons">
+              <button *ngIf="aiAutoApplyEnabled" class="btn btn-warning-soft" (click)="aiAutoApplyEnabled = false">
+                ⏸ Pause AI Auto-Pilot
+              </button>
+              <button *ngIf="!aiAutoApplyEnabled" class="btn btn-success-soft" (click)="aiAutoApplyEnabled = true">
+                ▶ Enable AI Auto-Pilot
+              </button>
+              <button class="btn btn-primary" (click)="showAiExplanationModal = false">
+                ✓ Close & Return to Live Chart
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -2712,9 +2890,480 @@ interface TimeframeOption {
     }
     .text-green { color: #10b981; }
     .text-red { color: #ef4444; }
+    .text-blue { color: #38bdf8; }
+    .text-amber { color: #f59e0b; }
     .text-right { text-align: right; }
     .font-mono { font-family: monospace; }
     .font-bold { font-weight: 700; }
+
+    /* AI Auto-Pilot Toolbar Controls & Radar Banner */
+    .ai-autopilot-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      border-radius: 6px;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .ai-autopilot-btn:hover {
+      border-color: #38bdf8;
+      color: #f8fafc;
+    }
+    .ai-autopilot-btn.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: #10b981;
+      color: #34d399;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+    }
+    .ai-ap-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #64748b;
+    }
+    .ai-ap-dot.active {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulseAp 1.5s infinite;
+    }
+    @keyframes pulseAp {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+    .ai-why-toolbar-btn {
+      background: #1e293b;
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      border-radius: 6px;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ai-why-toolbar-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+    }
+
+    /* Live Graph Radar Banner */
+    .chart-ai-radar-banner {
+      position: absolute;
+      top: 10px;
+      left: 15px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      backdrop-filter: blur(8px);
+      padding: 0.35rem 0.8rem;
+      border-radius: 9999px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+    .pulsing-ai-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
+      animation: pulseAp 1s infinite;
+    }
+    .radar-text {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #e0f2fe;
+      letter-spacing: 0.3px;
+    }
+    .radar-inspect-link {
+      background: none;
+      border: none;
+      color: #38bdf8;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .radar-inspect-link:hover {
+      color: #7dd3fc;
+    }
+
+    /* AI Card Footer Toggle Switch UI */
+    .ai-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .ai-footer-left {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .ai-toggle-switch-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .ai-toggle-switch-wrapper input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .ai-toggle-slider {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: 0.25s ease;
+      border-radius: 24px;
+    }
+    .ai-toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #ffffff;
+      transition: 0.25s ease;
+      border-radius: 50%;
+    }
+    .ai-toggle-switch-wrapper input:checked + .ai-toggle-slider {
+      background-color: #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+    .ai-toggle-switch-wrapper input:checked + .ai-toggle-slider:before {
+      transform: translateX(20px);
+    }
+    .ai-toggle-text-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .ai-toggle-title {
+      font-size: 0.825rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .ai-toggle-subtitle {
+      font-size: 0.7rem;
+      color: #94a3b8;
+    }
+    .ai-footer-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .btn-ai-inspect {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 0.55rem 0.95rem;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-ai-inspect:hover {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: #38bdf8;
+    }
+
+    /* AI EXPLANATION MODAL & AUDIT DIALOG */
+    .ai-explanation-dialog {
+      max-width: 680px;
+      width: 95%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+    .ai-modal-header {
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid #1e293b;
+    }
+    .ai-modal-header.header-bullish {
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.6) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border-bottom-color: rgba(16, 185, 129, 0.3);
+    }
+    .ai-modal-header.header-bearish {
+      background: linear-gradient(135deg, rgba(127, 29, 29, 0.6) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border-bottom-color: rgba(239, 68, 68, 0.3);
+    }
+    .ai-modal-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+    .ai-robot-badge-large {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      letter-spacing: 0.5px;
+    }
+    .ai-live-stamp-tag {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .ai-modal-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #f8fafc;
+      margin: 0;
+    }
+    .ai-timestamp {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 0.2rem;
+    }
+    .ai-modal-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .ai-audit-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .audit-section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-badge-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #38bdf8;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 900;
+    }
+    .audit-section-header h3 {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #e2e8f0;
+      letter-spacing: 0.5px;
+      margin: 0;
+    }
+    .action-summary-card {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 1rem;
+      border: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .action-summary-card.action-buy {
+      border-color: rgba(16, 185, 129, 0.35);
+      background: rgba(16, 185, 129, 0.05);
+    }
+    .action-summary-card.action-sell {
+      border-color: rgba(239, 68, 68, 0.35);
+      background: rgba(239, 68, 68, 0.05);
+    }
+    .action-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .action-hero-badge {
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+    }
+    .badge-buy {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid #10b981;
+    }
+    .badge-sell {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid #ef4444;
+    }
+    .pattern-hero-tag {
+      font-size: 0.825rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .action-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.65rem;
+    }
+    .act-card {
+      background: rgba(15, 23, 42, 0.7);
+      padding: 0.6rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .act-card-lbl {
+      font-size: 0.68rem;
+      color: #94a3b8;
+    }
+    .act-card-val {
+      font-size: 0.875rem;
+      color: #f8fafc;
+    }
+    .graph-impact-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 6px;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    .graph-impact-icon {
+      font-size: 1.1rem;
+    }
+    .graph-impact-text {
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+    .decision-reasons-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .decision-reason-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      background: #1e293b;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .reason-indicator-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .reason-text-block {
+      flex: 1;
+    }
+    .reason-p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      line-height: 1.45;
+    }
+    .execution-edge-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 0.4rem;
+    }
+    .edge-col {
+      background: #1e293b;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .edge-lbl {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #94a3b8;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    .edge-val {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #f1f5f9;
+      line-height: 1.4;
+    }
+    .ai-modal-footer {
+      padding: 1rem 1.5rem;
+      background: #0f172a;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-status-pill {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    .footer-action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .btn-warning-soft {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-warning-soft:hover {
+      background: rgba(245, 158, 11, 0.25);
+    }
+    .btn-success-soft {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-success-soft:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
   `]
 })
 export class StockDetailsComponent implements OnInit, OnDestroy {
@@ -2757,7 +3406,22 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
   orderNotification = '';
 
   // Chart Trade Execution Stamps on Graph
-  chartTradeStamps: { x: number; y: number; type: 'BUY' | 'SELL'; qty: number; price: number }[] = [];
+  chartTradeStamps: {
+    x: number;
+    y: number;
+    type: 'BUY' | 'SELL';
+    qty: number;
+    price: number;
+    isAiTrade?: boolean;
+    reason?: string;
+    report?: AiDecisionReport;
+  }[] = [];
+
+  // AI Autonomous Pilot state & explanation modal
+  aiAutoApplyEnabled = false;
+  showAiExplanationModal = false;
+  aiLastActionReport: AiDecisionReport | null = null;
+  lastAiAutoTradeTimestamp = 0;
 
   // Universal Search
   searchQuery = '';
@@ -3125,6 +3789,14 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
 
     this.processLiveCandleTick(newPrice);
     this.evaluateAiPatternPrediction(newPrice);
+
+    // If AI Auto-Pilot is enabled, evaluate autonomous trade execution
+    if (this.aiAutoApplyEnabled && this.aiPrediction) {
+      const nowMs = Date.now();
+      if (nowMs - this.lastAiAutoTradeTimestamp > 14000 && this.aiPrediction.confidence >= 80) {
+        this.executeAiAutonomousTrade(this.aiPrediction, false);
+      }
+    }
   }
 
   private processLiveCandleTick(price: number): void {
@@ -3384,7 +4056,167 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     };
   }
 
-  applyAiStrategy(): void {
+  toggleAiAutoApply(): void {
+    this.aiAutoApplyEnabled = !this.aiAutoApplyEnabled;
+    this.onAiAutoApplyToggleChange();
+  }
+
+  onAiAutoApplyToggleChange(): void {
+    if (this.aiAutoApplyEnabled) {
+      this.orderNotification = `🤖 AI Auto-Pilot ACTIVATED: Pattern detector will autonomously execute & reflect on live graph.`;
+      setTimeout(() => this.orderNotification = '', 4500);
+
+      // Trigger immediate execution and popup if high-conviction pattern present
+      if (this.aiPrediction && (Date.now() - this.lastAiAutoTradeTimestamp > 8000)) {
+        this.executeAiAutonomousTrade(this.aiPrediction, true);
+      }
+    } else {
+      this.orderNotification = `⏸ AI Auto-Pilot PAUSED: Returned to manual chart mode.`;
+      setTimeout(() => this.orderNotification = '', 3500);
+    }
+  }
+
+  openAiExplanationModal(report?: AiDecisionReport): void {
+    if (report) {
+      this.aiLastActionReport = report;
+    } else if (!this.aiLastActionReport && this.aiPrediction) {
+      // Build report from current live prediction
+      this.buildExplanationReportFromCurrentPrediction();
+    }
+    this.showAiExplanationModal = true;
+  }
+
+  private buildExplanationReportFromCurrentPrediction(): void {
+    if (!this.aiPrediction) return;
+    const isFx = this.isForex;
+    const currentP = this.liveQuote?.price ?? (this.stock?.price ?? 150);
+    const isBuy = this.aiPrediction.actionableSignal.includes('BUY');
+    const type: 'BUY' | 'SELL' = isBuy ? 'BUY' : 'SELL';
+    const allocDollars = this.quickTradeDollarAmount || 50;
+    const effectiveQty = isFx ? Math.round((allocDollars / currentP) * 10000) / 10000 : Math.round((allocDollars / currentP) * 100) / 100;
+    const qty = Math.max(0.01, effectiveQty);
+
+    const rsi = this.technicalData?.rsi14 ?? 50;
+    const ma20 = this.technicalData?.movingAverage20 ?? currentP;
+    const ma50 = this.technicalData?.movingAverage50 ?? currentP;
+
+    const reasons: string[] = [
+      `Algorithmic Pattern: Detected '${this.aiPrediction.patternName}' with ${this.aiPrediction.confidence}% statistical probability model.`,
+      isBuy
+        ? `Momentum Confirmation: RSI-14 (${rsi.toFixed(1)}) and tick velocity confirmed strong buyer momentum.`
+        : `Distribution Exhaustion: RSI-14 (${rsi.toFixed(1)}) signaled overbought exhaustion and downward reversal.`,
+      `Trend Structure: Price (\$${currentP.toFixed(isFx ? 4 : 2)}) is aligned with 20-period MA (\$${ma20.toFixed(isFx ? 4 : 2)}) and 50-period MA (\$${ma50.toFixed(isFx ? 4 : 2)}).`,
+      `Asymmetric Edge: Calculated ${this.aiPrediction.riskRewardRatio} ratio targeting \$${this.aiPrediction.projectedTargetPrice.toFixed(isFx ? 4 : 2)} (+${this.aiPrediction.expectedReturnPct.toFixed(2)}%) with stop at \$${this.aiPrediction.projectedStopLoss.toFixed(isFx ? 4 : 2)}.`
+    ];
+
+    this.aiLastActionReport = {
+      timestamp: new Date().toLocaleTimeString(),
+      action: type,
+      amount: allocDollars,
+      qty: qty,
+      price: currentP,
+      targetPrice: this.aiPrediction.projectedTargetPrice,
+      stopLoss: this.aiPrediction.projectedStopLoss,
+      upsidePct: this.aiPrediction.expectedReturnPct,
+      patternName: this.aiPrediction.patternName,
+      confidence: this.aiPrediction.confidence,
+      reasons: reasons,
+      guidance: this.aiPrediction.whereToInvest,
+      riskRewardRatio: this.aiPrediction.riskRewardRatio,
+      marketImpact: isBuy ? `+$${(currentP * 0.0018).toFixed(isFx ? 4 : 2)} price impulse` : `-$${(currentP * 0.0018).toFixed(isFx ? 4 : 2)} price impulse`
+    };
+  }
+
+  executeAiAutonomousTrade(pred: any, showPopupImmediately: boolean = false): void {
+    this.lastAiAutoTradeTimestamp = Date.now();
+    const isFx = this.isForex;
+    const currentP = this.liveQuote?.price ?? (this.stock?.price ?? 150);
+    const isBuy = pred.actionableSignal.includes('BUY');
+    const type: 'BUY' | 'SELL' = isBuy ? 'BUY' : 'SELL';
+    const allocDollars = this.quickTradeDollarAmount || 50;
+    const effectiveQty = isFx ? Math.round((allocDollars / currentP) * 10000) / 10000 : Math.round((allocDollars / currentP) * 100) / 100;
+    const qty = Math.max(0.01, effectiveQty);
+
+    const rsi = this.technicalData?.rsi14 ?? 50;
+    const ma20 = this.technicalData?.movingAverage20 ?? currentP;
+    const ma50 = this.technicalData?.movingAverage50 ?? currentP;
+
+    const reasons: string[] = [
+      `Algorithmic Pattern: Real-time scan identified '${pred.patternName}' with ${pred.confidence}% statistical probability.`,
+      isBuy
+        ? `Momentum Trigger: RSI (${rsi.toFixed(1)}) and order book bid accumulation confirmed positive breakout momentum.`
+        : `Reversal Trigger: RSI (${rsi.toFixed(1)}) and ask pressure confirmed overbought price exhaustion.`,
+      `Moving Average Confluence: Asset price (\$${currentP.toFixed(isFx ? 4 : 2)}) is aligned relative to MA20 (\$${ma20.toFixed(isFx ? 4 : 2)}) and MA50 (\$${ma50.toFixed(isFx ? 4 : 2)}).`,
+      `Risk/Reward Asymmetry: Formulated ${pred.riskRewardRatio} ratio targeting \$${pred.projectedTargetPrice.toFixed(isFx ? 4 : 2)} (+${pred.expectedReturnPct.toFixed(2)}%) with invalidation at \$${pred.projectedStopLoss.toFixed(isFx ? 4 : 2)}.`
+    ];
+
+    const report: AiDecisionReport = {
+      timestamp: new Date().toLocaleTimeString(),
+      action: type,
+      amount: allocDollars,
+      qty: qty,
+      price: currentP,
+      targetPrice: pred.projectedTargetPrice,
+      stopLoss: pred.projectedStopLoss,
+      upsidePct: pred.expectedReturnPct,
+      patternName: pred.patternName,
+      confidence: pred.confidence,
+      reasons: reasons,
+      guidance: pred.whereToInvest,
+      riskRewardRatio: pred.riskRewardRatio,
+      marketImpact: isBuy ? `+$${(currentP * 0.0022).toFixed(isFx ? 4 : 2)} upward impulse` : `-$${(currentP * 0.0022).toFixed(isFx ? 4 : 2)} downward impulse`
+    };
+
+    this.aiLastActionReport = report;
+
+    // Simulated market impact price shock on graph
+    const impactDelta = (isBuy ? 1 : -1) * (currentP * 0.0022);
+    const impactedPrice = Math.max(0.01, currentP + impactDelta);
+
+    // Add visual AI Execution Stamp onto the live chart
+    if (this.pricePoints.length > 0) {
+      const lastPoint = this.pricePoints[this.pricePoints.length - 1];
+      this.chartTradeStamps.push({
+        x: lastPoint.x,
+        y: lastPoint.y,
+        type: type,
+        qty: qty,
+        price: currentP,
+        isAiTrade: true,
+        reason: pred.patternName,
+        report: report
+      });
+      if (this.chartTradeStamps.length > 6) {
+        this.chartTradeStamps.shift();
+      }
+    }
+
+    // Inject market impulse into live candle
+    this.processLiveCandleTick(impactedPrice);
+    this.playTradeSound();
+
+    // Push into live executions tape
+    const now = new Date();
+    const timeStr = now.toTimeString().slice(0, 8) + '.' + Math.floor(now.getMilliseconds() / 100);
+    this.liveTrades.unshift({
+      id: 'ai-' + Date.now(),
+      time: timeStr,
+      type: type,
+      price: currentP,
+      size: qty,
+      total: allocDollars,
+      trader: '🤖 AI AUTO-PILOT',
+      isUserOrder: true
+    });
+
+    this.orderNotification = `🤖 AI Executed: ${type} \$${allocDollars} (${qty} shares) @ \$${currentP.toFixed(isFx ? 4 : 2)} [${pred.patternName}]`;
+
+    if (showPopupImmediately) {
+      this.showAiExplanationModal = true;
+    }
+  }
+
+  applyAiStrategy(executeNow: boolean = false): void {
     if (!this.aiPrediction) return;
     const action = (this.aiPrediction.actionableSignal.includes('BUY')) ? 'BUY' : 'SELL';
     this.tradeInputMode = 'dollars';
@@ -3392,8 +4224,13 @@ export class StockDetailsComponent implements OnInit, OnDestroy {
     this.useCustomLimitRate = true;
     this.customLimitRate = this.aiPrediction.projectedTargetPrice;
     this.onDollarInputChange();
-    this.orderNotification = `🤖 AI Strategy Applied: Pre-filled ${action} \$50 position targeting \$${this.aiPrediction.projectedTargetPrice}`;
-    setTimeout(() => this.orderNotification = '', 5000);
+
+    if (executeNow) {
+      this.executeAiAutonomousTrade(this.aiPrediction, true);
+    } else {
+      this.orderNotification = `🤖 AI Strategy Applied: Pre-filled ${action} \$50 position targeting \$${this.aiPrediction.projectedTargetPrice}`;
+      setTimeout(() => this.orderNotification = '', 5000);
+    }
   }
 
   private initIntradayCandles(basePrice: number): void {
