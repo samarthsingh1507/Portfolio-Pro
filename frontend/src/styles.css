@@ -465,3 +465,49 @@ body.light-mode .chart-tooltip {
   background: #0f172a !important;
   color: #f8fafc !important;
 }
+
+/* Sound FX Toggle in Light Mode */
+body.light-mode .sound-toggle-btn {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0284c7 !important;
+}
+
+body.light-mode .sound-toggle-btn:hover {
+  background: rgba(2, 132, 199, 0.12) !important;
+  border-color: #0284c7 !important;
+}
+
+body.light-mode .sound-toggle-btn.sound-muted {
+  color: #94a3b8 !important;
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   Sub-Parts & Tabs Slow Motion Blur Transition
+   ========================================================================== */
+.tab-content,
+.portfolio-analytics-view,
+.stock-analysis-view {
+  animation: subpartBlurSwoosh 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, filter, opacity;
+}
+
+@keyframes subpartBlurSwoosh {
+  0% {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(8px);
+  }
+  40% {
+    opacity: 0.85;
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0);
+  }
+}
+

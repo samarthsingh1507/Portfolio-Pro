@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TradeService } from '../../../core/services/trade.service';
+import { SoundFxService } from '../../../core/services/sound-fx.service';
 import { OrderResponse } from '../../../models/order.model';
 
 @Component({
@@ -41,7 +42,7 @@ import { OrderResponse } from '../../../models/order.model';
               type="button"
               class="toggle-btn buy-btn"
               [class.active]="orderType === 'BUY'"
-              (click)="orderType = 'BUY'"
+              (click)="setOrderType('BUY')"
             >
               BUY
             </button>
@@ -49,7 +50,7 @@ import { OrderResponse } from '../../../models/order.model';
               type="button"
               class="toggle-btn sell-btn"
               [class.active]="orderType === 'SELL'"
-              (click)="orderType = 'SELL'"
+              (click)="setOrderType('SELL')"
             >
               SELL
             </button>
@@ -118,11 +119,18 @@ import { OrderResponse } from '../../../models/order.model';
       right: 0;
       bottom: 0;
       background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1000;
       padding: 1rem;
+      animation: tradeModalBackdrop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes tradeModalBackdrop {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     .trade-modal {
       background: #0f172a;
@@ -132,6 +140,24 @@ import { OrderResponse } from '../../../models/order.model';
       max-width: 460px;
       padding: 2rem;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+      animation: tradeModalAppear 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, filter, opacity;
+    }
+    @keyframes tradeModalAppear {
+      0% {
+        opacity: 0;
+        filter: blur(12px);
+        transform: translateY(12px) scale(0.96);
+      }
+      40% {
+        opacity: 0.85;
+        filter: blur(3px);
+      }
+      100% {
+        opacity: 1;
+        filter: blur(0px);
+        transform: translateY(0) scale(1);
+      }
     }
     .modal-header {
       display: flex;
@@ -381,10 +407,21 @@ export class TradeFormComponent implements OnInit {
   errorMessage = '';
   lastOrder: OrderResponse | null = null;
 
-  constructor(private tradeService: TradeService) {}
+  constructor(
+    private tradeService: TradeService,
+    private soundFxService: SoundFxService
+  ) {}
 
   ngOnInit(): void {
     this.orderType = this.initialType || 'BUY';
+    this.soundFxService.playSwoosh();
+  }
+
+  setOrderType(type: 'BUY' | 'SELL'): void {
+    if (this.orderType !== type) {
+      this.orderType = type;
+      this.soundFxService.playSwoosh();
+    }
   }
 
   get estimatedTotal(): number {

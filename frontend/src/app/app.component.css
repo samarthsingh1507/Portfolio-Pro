@@ -370,6 +370,80 @@
   box-sizing: border-box;
 }
 
+/* Sound FX Toggle Button */
+.sound-toggle-btn {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  color: #38bdf8;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.sound-toggle-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #7dd3fc;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+  transform: translateY(-1px);
+}
+
+.sound-toggle-btn.sound-muted {
+  color: #64748b;
+  border-color: rgba(30, 41, 59, 0.8);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.sound-toggle-btn.sound-muted:hover {
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+.mobile-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ==========================================================================
+   Slow Premium Motion Blur Route Transition & Wind Swoosh
+   ========================================================================== */
+.route-transition-wrapper {
+  width: 100%;
+  min-height: 100%;
+  position: relative;
+}
+
+.route-transition-wrapper.route-swoosh-active {
+  animation: routeBlurSwoosh 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, filter, opacity;
+}
+
+@keyframes routeBlurSwoosh {
+  0% {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(14px) scale(0.988);
+  }
+  35% {
+    opacity: 0.82;
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* Responsive Breakpoints */
 @media (max-width: 900px) {
   .desktop-only {
@@ -392,3 +466,4 @@
     padding: 1.25rem;
   }
 }
+

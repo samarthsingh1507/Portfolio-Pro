@@ -7,6 +7,7 @@ import { PortfolioService } from '../../core/services/portfolio.service';
 import { AnalysisService } from '../../core/services/analysis.service';
 import { MarketService } from '../../core/services/market.service';
 import { MarketDataService } from '../../core/services/market-data.service';
+import { SoundFxService } from '../../core/services/sound-fx.service';
 import { PortfolioAnalytics, AllocationItem } from '../../models/portfolio.model';
 import { TechnicalAnalysis, FundamentalAnalysis } from '../../models/analysis.model';
 import { StockResponse } from '../../models/stock.model';
@@ -59,7 +60,7 @@ interface DonutSegment {
           <button
             class="tab-btn"
             [class.active]="activeTab === 'portfolio'"
-            (click)="activeTab = 'portfolio'"
+            (click)="setAnalysisTab('portfolio')"
           >
             <svg class="tab-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
@@ -70,7 +71,7 @@ interface DonutSegment {
           <button
             class="tab-btn"
             [class.active]="activeTab === 'stock'"
-            (click)="activeTab = 'stock'"
+            (click)="setAnalysisTab('stock')"
           >
             <svg class="tab-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
@@ -2223,8 +2224,16 @@ export class AnalysisComponent implements OnInit, OnDestroy {
     private portfolioService: PortfolioService,
     private analysisService: AnalysisService,
     private marketService: MarketService,
-    private marketDataService: MarketDataService
+    private marketDataService: MarketDataService,
+    public soundFxService: SoundFxService
   ) {}
+
+  setAnalysisTab(tab: 'portfolio' | 'stock'): void {
+    if (this.activeTab !== tab) {
+      this.soundFxService.playSwoosh();
+      this.activeTab = tab;
+    }
+  }
 
   get isForex(): boolean {
     return (this.selectedSymbol || '').includes('/');

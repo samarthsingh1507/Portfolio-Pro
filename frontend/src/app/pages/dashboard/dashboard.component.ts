@@ -9,6 +9,7 @@ import { MarketService } from '../../core/services/market.service';
 import { MarketDataService } from '../../core/services/market-data.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
 import { TradeService } from '../../core/services/trade.service';
+import { SoundFxService } from '../../core/services/sound-fx.service';
 import { Portfolio, Holding } from '../../models/portfolio.model';
 import { Stock, WatchlistItem } from '../../models/stock.model';
 import { OrderResponse } from '../../models/order.model';
@@ -1319,11 +1320,17 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       bottom: 0;
       background: rgba(3, 7, 18, 0.82);
       backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 1050;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1.5rem;
+      animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     .modal-dialog.modal-xl {
       background: #0f172a;
@@ -1335,11 +1342,24 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       display: flex;
       flex-direction: column;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(56, 189, 248, 0.15);
-      animation: modal-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: modal-appear 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, filter, opacity;
     }
     @keyframes modal-appear {
-      from { opacity: 0; transform: scale(0.96) translateY(10px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
+      0% {
+        opacity: 0;
+        filter: blur(12px);
+        transform: scale(0.96) translateY(12px);
+      }
+      40% {
+        opacity: 0.85;
+        filter: blur(3px);
+      }
+      100% {
+        opacity: 1;
+        filter: blur(0px);
+        transform: scale(1) translateY(0);
+      }
     }
     .modal-header {
       display: flex;
@@ -1619,7 +1639,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private marketService: MarketService,
     private marketDataService: MarketDataService,
     private watchlistService: WatchlistService,
-    private tradeService: TradeService
+    private tradeService: TradeService,
+    private soundFxService: SoundFxService
   ) {}
 
   getGreeting(): string {
@@ -1649,6 +1670,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   openMarketLeadersModal(): void {
+    this.soundFxService.playSwoosh();
     this.showMarketLeadersModal = true;
   }
 
@@ -1974,6 +1996,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   openQuickBuy(): void {
     if (this.popularStocks.length > 0) {
+      this.soundFxService.playSwoosh();
       const stock = this.popularStocks[0];
       const livePrice = this.liveQuotes[stock.symbol]?.price ?? stock.price;
       this.selectedTradeStock = {
@@ -1987,6 +2010,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   openTradeForStock(stock: Stock, type: 'BUY' | 'SELL'): void {
+    this.soundFxService.playSwoosh();
     const livePrice = this.liveQuotes[stock.symbol]?.price ?? stock.price;
     this.selectedTradeStock = {
       id: stock.id,
@@ -1998,6 +2022,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   openTradeForHolding(holding: Holding, type: 'BUY' | 'SELL'): void {
+    this.soundFxService.playSwoosh();
     this.selectedTradeStock = {
       id: holding.stockId,
       symbol: holding.symbol,
@@ -2008,6 +2033,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   openTradeFromWatchlist(item: WatchlistItem, type: 'BUY' | 'SELL'): void {
+    this.soundFxService.playSwoosh();
     this.selectedTradeStock = {
       id: item.stockId,
       symbol: item.symbol,

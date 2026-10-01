@@ -6,6 +6,7 @@ import { interval, Subscription } from 'rxjs';
 import { MarketService } from '../../core/services/market.service';
 import { MarketDataService } from '../../core/services/market-data.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
+import { SoundFxService } from '../../core/services/sound-fx.service';
 import { Stock } from '../../models/stock.model';
 import { MarketQuote } from '../../models/market-quote.model';
 import { WatchlistComponent } from './watchlist/watchlist.component';
@@ -32,7 +33,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
           <button
             class="tab-btn"
             [class.active]="activeTab === 'all' && selectedCategory === 'all'"
-            (click)="activeTab = 'all'; selectedCategory = 'all'"
+            (click)="setMarketTab('all', 'all')"
           >
             <svg class="tab-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="7"></rect>
@@ -45,7 +46,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
           <button
             class="tab-btn"
             [class.active]="activeTab === 'all' && selectedCategory === 'stocks'"
-            (click)="activeTab = 'all'; selectedCategory = 'stocks'"
+            (click)="setMarketTab('all', 'stocks')"
           >
             <svg class="tab-svg text-emerald" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
@@ -56,7 +57,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
           <button
             class="tab-btn"
             [class.active]="activeTab === 'all' && selectedCategory === 'commodities'"
-            (click)="activeTab = 'all'; selectedCategory = 'commodities'"
+            (click)="setMarketTab('all', 'commodities')"
           >
             <svg class="tab-svg text-gold" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
@@ -68,7 +69,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
           <button
             class="tab-btn"
             [class.active]="activeTab === 'all' && selectedCategory === 'forex'"
-            (click)="activeTab = 'all'; selectedCategory = 'forex'"
+            (click)="setMarketTab('all', 'forex')"
           >
             <svg class="tab-svg text-purple" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="1" x2="12" y2="23"></line>
@@ -79,7 +80,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
           <button
             class="tab-btn"
             [class.active]="activeTab === 'watchlist'"
-            (click)="activeTab = 'watchlist'"
+            (click)="setMarketTab('watchlist')"
           >
             <svg class="tab-svg text-amber" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -159,7 +160,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
           <p>No assets found matching "<strong>{{ searchQuery }}</strong>"</p>
         </div>
 
-        <div *ngIf="!isLoading && filteredStocks.length > 0" class="table-card">
+        <div *ngIf="!isLoading && filteredStocks.length > 0" class="table-card" [class.subpart-swoosh-active]="isCategoryChanging">
           <table class="market-table">
             <thead>
               <tr>
@@ -690,8 +691,25 @@ export class MarketComponent implements OnInit, OnDestroy {
   constructor(
     private marketService: MarketService,
     private marketDataService: MarketDataService,
-    public watchlistService: WatchlistService
+    public watchlistService: WatchlistService,
+    public soundFxService: SoundFxService
   ) {}
+
+  isCategoryChanging: boolean = false;
+  private categoryTimeout: any = null;
+
+  setMarketTab(tab: 'all' | 'watchlist', category: 'all' | 'stocks' | 'forex' | 'commodities' = 'all'): void {
+    if (this.activeTab !== tab || this.selectedCategory !== category) {
+      this.soundFxService.playSwoosh();
+      this.activeTab = tab;
+      this.selectedCategory = category;
+      this.isCategoryChanging = true;
+      if (this.categoryTimeout) clearTimeout(this.categoryTimeout);
+      this.categoryTimeout = setTimeout(() => {
+        this.isCategoryChanging = false;
+      }, 480);
+    }
+  }
 
   isCommodity(symbol: string): boolean {
     const s = (symbol || '').toUpperCase();

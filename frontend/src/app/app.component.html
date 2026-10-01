@@ -45,6 +45,27 @@
 
     <!-- Auth Actions & Mobile Hamburger -->
     <div class="nav-right">
+      <!-- Sound FX Toggle Button -->
+      <button
+        type="button"
+        class="sound-toggle-btn"
+        (click)="soundFxService.toggleSound()"
+        [attr.aria-label]="soundFxService.isEnabled() ? 'Mute Transition Sounds' : 'Enable Transition Sounds'"
+        [title]="soundFxService.isEnabled() ? 'Transition Sound: ON (Click to Mute)' : 'Transition Sound: OFF (Click to Enable)'"
+        [class.sound-muted]="!soundFxService.isEnabled()"
+      >
+        <svg *ngIf="soundFxService.isEnabled()" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <svg *ngIf="!soundFxService.isEnabled()" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+      </button>
+
       <!-- Animated Theme Toggle Switch -->
       <button
         type="button"
@@ -113,9 +134,29 @@
           <span class="avatar-dot"></span>
           <span class="mobile-username">{{ authService.currentUser() }}</span>
         </div>
-        <button
-          type="button"
-          class="theme-toggle-btn"
+        <div class="mobile-controls-right">
+          <button
+            type="button"
+            class="sound-toggle-btn"
+            (click)="soundFxService.toggleSound()"
+            [attr.aria-label]="soundFxService.isEnabled() ? 'Mute Transition Sounds' : 'Enable Transition Sounds'"
+            [title]="soundFxService.isEnabled() ? 'Transition Sound: ON' : 'Transition Sound: OFF'"
+            [class.sound-muted]="!soundFxService.isEnabled()"
+          >
+            <svg *ngIf="soundFxService.isEnabled()" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+            <svg *ngIf="!soundFxService.isEnabled()" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <line x1="23" y1="9" x2="17" y2="15"></line>
+              <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="theme-toggle-btn"
           (click)="themeService.toggleTheme()"
           [attr.aria-label]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         >
@@ -143,6 +184,7 @@
           </span>
         </button>
       </div>
+      </div>
       <nav class="mobile-nav-links">
         <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMobileMenu()">Dashboard</a>
         <a routerLink="/market" routerLinkActive="active" (click)="closeMobileMenu()">Market</a>
@@ -158,6 +200,8 @@
   </header>
 
   <main class="main-content">
-    <router-outlet></router-outlet>
+    <div class="route-transition-wrapper route-swoosh-active" #routeStage>
+      <router-outlet (activate)="onRouteActivate()"></router-outlet>
+    </div>
   </main>
 </div>
