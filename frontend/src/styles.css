@@ -396,6 +396,18 @@ body.light-mode .btn-outline:hover {
   border-color: #94a3b8 !important;
 }
 
+body.light-mode .btn-trade {
+  background: rgba(37, 99, 235, 0.08) !important;
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  color: #1d4ed8 !important;
+}
+
+body.light-mode .btn-trade:hover {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
 /* Trade Modal in Light Mode */
 body.light-mode .trade-modal-backdrop,
 body.light-mode .modal-backdrop {

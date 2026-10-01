@@ -164,15 +164,15 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
           <table class="market-table">
             <thead>
               <tr>
-                <th>Symbol</th>
-                <th>Asset / Pair Name</th>
-                <th>Sector / Category</th>
-                <th class="text-right">Live Price</th>
-                <th class="text-center">Trend (7D)</th>
-                <th class="text-right">P/E / Multiplier</th>
-                <th class="text-right">Market Cap / Vol</th>
-                <th class="text-center">Watchlist</th>
-                <th class="text-center">Action</th>
+                <th class="col-symbol">Symbol</th>
+                <th class="col-name">Asset / Pair Name</th>
+                <th class="col-sector">Sector / Category</th>
+                <th class="text-right col-price">Live Price</th>
+                <th class="text-center col-trend">Trend (7D)</th>
+                <th class="text-right col-pe">P/E / Multiplier</th>
+                <th class="text-right col-cap">Market Cap / Vol</th>
+                <th class="text-center col-watch">Watchlist</th>
+                <th class="text-center col-action">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -244,9 +244,18 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
                     </svg>
                   </button>
                 </td>
-                <td class="text-center">
-                  <a [routerLink]="['/market', stock.symbol]" class="btn btn-sm btn-trade">
-                    Trade / Chart
+                <td class="text-center cell-action">
+                  <a
+                    [routerLink]="['/market', stock.symbol]"
+                    class="btn btn-sm btn-trade"
+                    [title]="'View interactive charts and trade ' + stock.symbol"
+                  >
+                    <svg class="btn-trade-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Trade / Chart</span>
                   </a>
                 </td>
               </tr>
@@ -464,6 +473,7 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
     }
     .market-table {
       width: 100%;
+      min-width: 1080px;
       border-collapse: collapse;
       text-align: left;
     }
@@ -474,18 +484,61 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding: 0.85rem 1.25rem;
+      padding: 0.85rem 1rem;
       border-bottom: 1px solid #334155;
+      white-space: nowrap;
+      user-select: none;
     }
     .market-table td {
-      padding: 0.9rem 1.25rem;
+      padding: 0.85rem 1rem;
       border-bottom: 1px solid #1e293b;
       color: #f8fafc;
       font-size: 0.9rem;
       transition: background-color 0.3s ease;
+      vertical-align: middle;
     }
     .market-table tr:hover td {
       background-color: #131d31;
+    }
+    .col-symbol, .cell-symbol {
+      width: 90px;
+      min-width: 90px;
+      white-space: nowrap;
+    }
+    .col-name, .cell-name {
+      min-width: 175px;
+    }
+    .col-sector, .cell-sector {
+      min-width: 125px;
+      white-space: nowrap;
+    }
+    .col-price, .cell-price {
+      min-width: 120px;
+      white-space: nowrap;
+    }
+    .col-trend, .cell-trend {
+      width: 90px;
+      min-width: 90px;
+      white-space: nowrap;
+    }
+    .col-pe, .cell-pe {
+      min-width: 105px;
+      white-space: nowrap;
+    }
+    .col-cap, .cell-cap {
+      min-width: 120px;
+      white-space: nowrap;
+    }
+    .col-watch, .cell-watch {
+      width: 75px;
+      min-width: 75px;
+      white-space: nowrap;
+    }
+    .col-action, .cell-action {
+      width: 155px;
+      min-width: 155px;
+      white-space: nowrap;
+      text-align: center;
     }
     .row-flash-up td {
       background-color: rgba(16, 185, 129, 0.12) !important;
@@ -622,6 +675,10 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
     .text-green { color: #10b981; }
     .text-red { color: #ef4444; }
     .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
       padding: 0.4rem 0.85rem;
       border-radius: 6px;
       font-size: 0.825rem;
@@ -629,9 +686,12 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       cursor: pointer;
       text-decoration: none;
       transition: all 0.15s ease;
+      white-space: nowrap;
+      line-height: 1.25;
+      box-sizing: border-box;
     }
     .btn-sm {
-      padding: 0.35rem 0.75rem;
+      padding: 0.4rem 0.85rem;
       font-size: 0.8rem;
     }
     .btn-outline {
@@ -641,13 +701,34 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
     }
     .btn-trade {
       background: rgba(37, 99, 235, 0.18);
-      border: 1px solid rgba(37, 99, 235, 0.4);
+      border: 1px solid rgba(59, 130, 246, 0.45);
       color: #60a5fa;
       font-weight: 700;
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.42rem 0.85rem;
+      border-radius: 6px;
+      text-decoration: none;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-trade span {
+      white-space: nowrap !important;
+      display: inline-block;
     }
     .btn-trade:hover {
       background: #2563eb;
+      border-color: #3b82f6;
       color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-trade-svg {
+      flex-shrink: 0;
+      color: currentColor;
     }
     .loading-card, .empty-results {
       padding: 3rem;
