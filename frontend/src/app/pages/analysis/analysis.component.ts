@@ -60,14 +60,22 @@ interface DonutSegment {
             [class.active]="activeTab === 'portfolio'"
             (click)="activeTab = 'portfolio'"
           >
-            📊 Portfolio Risk & Allocation
+            <svg class="tab-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+              <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+            </svg>
+            <span>Portfolio Risk & Allocation</span>
           </button>
           <button
             class="tab-btn"
             [class.active]="activeTab === 'stock'"
             (click)="activeTab = 'stock'"
           >
-            📈 Stock Technicals & Fundamentals
+            <svg class="tab-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+              <polyline points="16 7 22 7 22 13"/>
+            </svg>
+            <span>Stock Technicals & Fundamentals</span>
           </button>
         </div>
       </div>
@@ -189,7 +197,12 @@ interface DonutSegment {
 
             <!-- Empty Allocation State -->
             <div *ngIf="analytics.allocation.length === 0" class="empty-allocation">
-              <div class="empty-icon">🥧</div>
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                  <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                </svg>
+              </div>
               <h4>No active holdings to allocate</h4>
               <p>You haven't placed any simulated trades yet. Visit the Market directory to start building your simulated portfolio.</p>
               <a routerLink="/market" class="btn btn-primary">Go to Market Directory</a>
@@ -276,7 +289,12 @@ interface DonutSegment {
           <!-- Universal Live Global Search Input -->
           <div class="global-search-container">
             <div class="search-input-wrapper">
-              <span class="search-icon">🔍</span>
+              <span class="search-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
               <input
                 type="text"
                 [(ngModel)]="searchQuery"
@@ -851,20 +869,39 @@ interface DonutSegment {
       padding: 0.25rem;
     }
     .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
       background: transparent;
       border: none;
       color: #94a3b8;
-      padding: 0.5rem 1rem;
+      padding: 0.5rem 1.1rem;
       border-radius: 6px;
       font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.15s ease;
     }
+    .tab-btn .tab-icon-svg {
+      width: 16px;
+      height: 16px;
+      stroke: #94a3b8;
+      flex-shrink: 0;
+      transition: stroke 0.15s ease, transform 0.15s ease;
+    }
+    .tab-btn:hover {
+      color: #f1f5f9;
+    }
+    .tab-btn:hover .tab-icon-svg {
+      stroke: #f1f5f9;
+    }
     .tab-btn.active {
       background: #1e293b;
       color: #38bdf8;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    .tab-btn.active .tab-icon-svg {
+      stroke: #38bdf8;
     }
     .state-card {
       padding: 3.5rem;
