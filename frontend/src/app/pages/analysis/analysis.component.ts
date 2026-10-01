@@ -38,6 +38,7 @@ interface DonutSegment {
   color: string;
   dashArray: string;
   dashOffset: number;
+  item: AllocationItem;
 }
 
 @Component({
@@ -208,59 +209,154 @@ interface DonutSegment {
               <a routerLink="/market" class="btn btn-primary">Go to Market Directory</a>
             </div>
 
-            <!-- Allocation Chart & Legend -->
+            <!-- Allocation Chart & Legend with 3D Interactive Donut Stage -->
             <div *ngIf="analytics.allocation.length > 0" class="allocation-layout">
-              <!-- Visual Donut Chart -->
-              <div class="donut-chart-wrapper">
-                <svg class="donut-svg" viewBox="0 0 280 280">
+              <!-- Visual 3D Interactive Donut Chart Stage -->
+              <div
+                class="donut-3d-stage"
+                (mousemove)="onDonutMouseMove($event)"
+                (mouseleave)="onDonutMouseLeave()"
+                [style.transform]="tiltTransform"
+              >
+                <svg class="donut-svg" viewBox="0 0 300 300">
+                  <defs>
+                    <!-- 3D Lighting & Shading Gradients -->
+                    <radialGradient id="donut3dLighting" cx="35%" cy="30%" r="70%">
+                      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.30"/>
+                      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.0"/>
+                      <stop offset="100%" stop-color="#000000" stop-opacity="0.45"/>
+                    </radialGradient>
+
+                    <filter id="donut3dDropShadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.65" />
+                    </filter>
+
+                    <filter id="segmentActiveGlow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="6" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                  </defs>
+
+                  <!-- 3D Base Extrusion Shadows for Realistic Depth -->
                   <circle
-                    cx="140"
-                    cy="140"
-                    r="80"
+                    cx="150"
+                    cy="162"
+                    r="85"
+                    fill="transparent"
+                    stroke="#070b14"
+                    stroke-width="38"
+                    filter="url(#donut3dDropShadow)"
+                  />
+                  <circle
+                    cx="150"
+                    cy="154"
+                    r="85"
+                    fill="transparent"
+                    stroke="#0b1329"
+                    stroke-width="36"
+                  />
+
+                  <!-- Background Base Track -->
+                  <circle
+                    cx="150"
+                    cy="150"
+                    r="85"
                     fill="transparent"
                     stroke="#1e293b"
                     stroke-width="36"
                   />
+
+                  <!-- Interactive Donut Segments with 3D Depth & Hover Expansion -->
+                  <g class="donut-segments-group">
+                    <circle
+                      *ngFor="let seg of donutSegments; let i = index"
+                      cx="150"
+                      cy="150"
+                      r="85"
+                      fill="transparent"
+                      [attr.stroke]="seg.color"
+                      [attr.stroke-width]="hoveredSymbol === seg.symbol ? 46 : 36"
+                      [attr.stroke-dasharray]="seg.dashArray"
+                      [attr.stroke-dashoffset]="seg.dashOffset"
+                      [class.active-segment]="hoveredSymbol === seg.symbol"
+                      [class.dimmed-segment]="hoveredSymbol && hoveredSymbol !== seg.symbol"
+                      [attr.filter]="hoveredSymbol === seg.symbol ? 'url(#segmentActiveGlow)' : null"
+                      (mouseenter)="setHoveredAllocation(seg.item)"
+                      (mouseleave)="setHoveredAllocation(null)"
+                      transform="rotate(-90 150 150)"
+                    />
+                  </g>
+
+                  <!-- 3D Specular Lighting Overlay Sphere -->
                   <circle
-                    *ngFor="let seg of donutSegments"
-                    cx="140"
-                    cy="140"
-                    r="80"
-                    fill="transparent"
-                    [attr.stroke]="seg.color"
-                    stroke-width="36"
-                    [attr.stroke-dasharray]="seg.dashArray"
-                    [attr.stroke-dashoffset]="seg.dashOffset"
-                    transform="rotate(-90 140 140)"
+                    cx="150"
+                    cy="150"
+                    r="103"
+                    fill="url(#donut3dLighting)"
+                    pointer-events="none"
+                    opacity="0.6"
+                    style="mix-blend-mode: overlay;"
                   />
-                  <!-- Inner Donut Text -->
-                  <text x="140" y="132" text-anchor="middle" class="donut-center-title">TOTAL</text>
-                  <text x="140" y="156" text-anchor="middle" class="donut-center-value">
-                    \${{ analytics.currentValue | number:'1.0-0' }}
-                  </text>
+
+                  <!-- Inner Floating Glassmorphism HUD Disc -->
+                  <circle
+                    cx="150"
+                    cy="150"
+                    r="64"
+                    fill="#0f172a"
+                    stroke="rgba(255, 255, 255, 0.12)"
+                    stroke-width="1.5"
+                    filter="drop-shadow(0 4px 10px rgba(0,0,0,0.5))"
+                  />
                 </svg>
+
+                <!-- Central Interactive Dynamic Readout HUD -->
+                <div class="donut-center-hud">
+                  <div *ngIf="!hoveredAllocationItem" class="hud-default-content">
+                    <span class="hud-title">PORTFOLIO</span>
+                    <span class="hud-main-val font-mono">\${{ analytics.currentValue | number:'1.0-0' }}</span>
+                    <span class="hud-sub-badge">{{ analytics.allocation.length }} ASSETS</span>
+                  </div>
+
+                  <div *ngIf="hoveredAllocationItem" class="hud-active-content">
+                    <span class="hud-symbol-tag" [style.background-color]="hoveredAllocationColor">{{ hoveredAllocationItem.symbol }}</span>
+                    <span class="hud-active-name">{{ hoveredAllocationItem.companyName || hoveredAllocationItem.symbol }}</span>
+                    <span class="hud-active-val font-mono">\${{ (hoveredAllocationItem.currentValue ?? 0) | number:'1.2-2' }}</span>
+                    <span class="hud-active-pct" [style.color]="hoveredAllocationColor">{{ hoveredAllocationItem.percentage | number:'1.2-2' }}% SHARE</span>
+                  </div>
+                </div>
               </div>
 
-              <!-- Allocation Table / List -->
+              <!-- Allocation Table / List with 3D Depth & Cross-Hover Interactions -->
               <div class="allocation-list-container">
-                <!-- Stacked Progress Bar -->
-                <div class="stacked-bar">
-                  <div
-                    *ngFor="let item of analytics.allocation; let i = index"
-                    class="bar-segment"
-                    [style.width.%]="item.percentage"
-                    [style.background-color]="getAllocationColor(i)"
-                    [title]="item.symbol + ': ' + item.percentage + '%'"
-                  ></div>
+                <!-- Interactive 3D Stacked Progress Bar -->
+                <div class="stacked-bar-3d-wrapper">
+                  <div class="stacked-bar-3d">
+                    <div
+                      *ngFor="let item of analytics.allocation; let i = index"
+                      class="bar-segment-3d"
+                      [style.width.%]="item.percentage"
+                      [style.background-color]="getAllocationColor(i)"
+                      [class.is-hovered]="hoveredSymbol === item.symbol"
+                      [class.is-dimmed]="hoveredSymbol && hoveredSymbol !== item.symbol"
+                      (mouseenter)="setHoveredAllocation(item)"
+                      (mouseleave)="setHoveredAllocation(null)"
+                      [title]="item.symbol + ': ' + item.percentage + '%'"
+                    ></div>
+                  </div>
                 </div>
 
                 <div class="allocation-items-list">
                   <div
                     *ngFor="let item of analytics.allocation; let i = index"
-                    class="allocation-item-row"
+                    class="allocation-item-row-3d"
+                    [class.is-hovered]="hoveredSymbol === item.symbol"
+                    [class.is-dimmed]="hoveredSymbol && hoveredSymbol !== item.symbol"
+                    (mouseenter)="setHoveredAllocation(item)"
+                    (mouseleave)="setHoveredAllocation(null)"
                   >
                     <div class="item-left">
-                      <span class="color-dot" [style.background-color]="getAllocationColor(i)"></span>
+                      <span class="color-dot-3d" [style.background-color]="getAllocationColor(i)" [style.box-shadow]="'0 0 10px ' + getAllocationColor(i)"></span>
                       <a [routerLink]="['/market', item.symbol]" class="item-symbol">
                         {{ item.symbol }}
                       </a>
@@ -268,12 +364,13 @@ interface DonutSegment {
                     </div>
 
                     <div class="item-right">
-                      <span *ngIf="item.currentValue" class="item-value">
+                      <span *ngIf="item.currentValue" class="item-value font-mono">
                         \${{ item.currentValue | number:'1.2-2' }}
                       </span>
-                      <span class="item-pct font-bold">
+                      <span class="item-pct font-bold" [style.color]="hoveredSymbol === item.symbol ? getAllocationColor(i) : '#f8fafc'">
                         {{ item.percentage | number:'1.2-2' }}%
                       </span>
+                      <span class="item-interactive-arrow">→</span>
                     </div>
                   </div>
                 </div>
@@ -1152,103 +1249,246 @@ interface DonutSegment {
     }
     .allocation-layout {
       display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 2.5rem;
+      grid-template-columns: 300px 1fr;
+      gap: 3rem;
       align-items: center;
+      perspective: 1200px;
     }
-    @media (max-width: 768px) {
+    @media (max-width: 860px) {
       .allocation-layout {
         grid-template-columns: 1fr;
         justify-items: center;
       }
     }
-    .donut-chart-wrapper {
-      width: 280px;
-      height: 280px;
+
+    /* 3D Interactive Donut Stage */
+    .donut-3d-stage {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+      transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      cursor: crosshair;
     }
     .donut-svg {
       width: 100%;
       height: 100%;
+      overflow: visible;
     }
-    .donut-center-title {
-      fill: #64748b;
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
+    .donut-segments-group circle {
+      cursor: pointer;
+      transition: stroke-width 0.25s ease, opacity 0.25s ease, filter 0.25s ease;
+      transform-origin: 150px 150px;
     }
-    .donut-center-value {
-      fill: #f8fafc;
-      font-size: 1.4rem;
+    .donut-segments-group circle:hover,
+    .donut-segments-group circle.active-segment {
+      opacity: 1 !important;
+      stroke-width: 46px !important;
+    }
+    .donut-segments-group circle.dimmed-segment {
+      opacity: 0.28;
+    }
+
+    /* Central Floating 3D Glass HUD */
+    .donut-center-hud {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) translateZ(35px);
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
+      z-index: 10;
+    }
+    .hud-default-content,
+    .hud-active-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      width: 100%;
+      animation: hudFade 0.2s ease-out;
+    }
+    @keyframes hudFade {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .hud-title {
+      font-size: 0.65rem;
       font-weight: 800;
+      color: #64748b;
+      letter-spacing: 1px;
     }
+    .hud-main-val {
+      font-size: 1.45rem;
+      font-weight: 900;
+      color: #f8fafc;
+      line-height: 1.1;
+    }
+    .hud-sub-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      margin-top: 0.15rem;
+    }
+    .hud-symbol-tag {
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #0f172a;
+      padding: 0.15rem 0.6rem;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    .hud-active-name {
+      font-size: 0.68rem;
+      color: #cbd5e1;
+      max-width: 110px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hud-active-val {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #f8fafc;
+      line-height: 1.1;
+    }
+    .hud-active-pct {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+
+    /* 3D Stacked Progress Bar */
     .allocation-list-container {
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
       width: 100%;
     }
-    .stacked-bar {
-      height: 14px;
-      border-radius: 7px;
+    .stacked-bar-3d-wrapper {
+      padding: 0.25rem;
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+    .stacked-bar-3d {
+      height: 16px;
+      border-radius: 8px;
       overflow: hidden;
       display: flex;
       background: #1e293b;
     }
-    .bar-segment {
+    .bar-segment-3d {
       height: 100%;
-      transition: width 0.3s ease;
+      transition: all 0.25s ease;
+      cursor: pointer;
     }
+    .bar-segment-3d.is-hovered {
+      filter: brightness(1.25);
+      transform: scaleY(1.2);
+    }
+    .bar-segment-3d.is-dimmed {
+      opacity: 0.3;
+    }
+
+    /* 3D Allocation List Cards with Interactive Elevation */
     .allocation-items-list {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
     }
-    .allocation-item-row {
+    .allocation-item-row-3d {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.65rem 0.85rem;
-      border-radius: 8px;
+      padding: 0.8rem 1.1rem;
+      border-radius: 10px;
       background: #0b1120;
       border: 1px solid #1e293b;
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      cursor: pointer;
+      transform-style: preserve-3d;
+    }
+    .allocation-item-row-3d:hover,
+    .allocation-item-row-3d.is-hovered {
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.12) 0%, #1e293b 100%);
+      border-color: #38bdf8;
+      transform: translateX(8px) translateZ(8px);
+      box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.5), 0 0 14px rgba(56, 189, 248, 0.2);
+    }
+    .allocation-item-row-3d.is-dimmed {
+      opacity: 0.45;
     }
     .item-left {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.85rem;
     }
-    .color-dot {
-      width: 10px;
-      height: 10px;
+    .color-dot-3d {
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .allocation-item-row-3d.is-hovered .color-dot-3d {
+      transform: scale(1.3);
     }
     .item-symbol {
       color: #38bdf8;
-      font-weight: 700;
+      font-weight: 800;
       text-decoration: none;
-      font-size: 0.95rem;
+      font-size: 1rem;
+      letter-spacing: 0.3px;
     }
     .item-symbol:hover {
       text-decoration: underline;
     }
     .item-company {
       color: #94a3b8;
-      font-size: 0.8rem;
+      font-size: 0.825rem;
     }
     .item-right {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 1.25rem;
     }
     .item-value {
       color: #cbd5e1;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
     }
     .item-pct {
-      color: #f8fafc;
-      font-size: 0.95rem;
-      min-width: 60px;
+      font-size: 1rem;
+      min-width: 65px;
       text-align: right;
+      transition: color 0.2s ease;
+    }
+    .item-interactive-arrow {
+      color: #64748b;
+      font-size: 1.1rem;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+    .allocation-item-row-3d.is-hovered .item-interactive-arrow {
+      color: #38bdf8;
+      transform: translateX(4px);
     }
     .font-bold { font-weight: 700; }
     .btn {
@@ -1988,11 +2228,20 @@ interface DonutSegment {
 export class AnalysisComponent implements OnInit, OnDestroy {
   activeTab: 'portfolio' | 'stock' = 'portfolio';
 
-  // Portfolio Analytics State
+  // Portfolio Analytics State & 3D Interactive Donut
   analytics: PortfolioAnalytics | null = null;
   isLoadingAnalytics = true;
   analyticsError = '';
   donutSegments: DonutSegment[] = [];
+  hoveredSymbol: string | null = null;
+  hoveredAllocationItem: AllocationItem | null = null;
+  tiltTransform = 'perspective(900px) rotateX(0deg) rotateY(0deg)';
+
+  get hoveredAllocationColor(): string {
+    if (!this.hoveredAllocationItem || !this.analytics) return '#38bdf8';
+    const idx = this.analytics.allocation.findIndex(a => a.symbol === this.hoveredAllocationItem?.symbol);
+    return idx >= 0 ? this.getAllocationColor(idx) : '#38bdf8';
+  }
 
   // Stock Analysis State
   availableStocks: StockResponse[] = [];
@@ -2194,8 +2443,8 @@ export class AnalysisComponent implements OnInit, OnDestroy {
     this.donutSegments = [];
     if (!allocation || allocation.length === 0) return;
 
-    // Circumference = 2 * PI * 80 ≈ 502.65
-    const circumference = 2 * Math.PI * 80;
+    // Circumference = 2 * PI * 85 ≈ 534.07
+    const circumference = 2 * Math.PI * 85;
     let cumulative = 0;
 
     this.donutSegments = allocation.map((item, index) => {
@@ -2209,9 +2458,31 @@ export class AnalysisComponent implements OnInit, OnDestroy {
         percentage: item.percentage,
         color: this.getAllocationColor(index),
         dashArray,
-        dashOffset
+        dashOffset,
+        item: item
       };
     });
+  }
+
+  setHoveredAllocation(item: AllocationItem | null): void {
+    this.hoveredAllocationItem = item;
+    this.hoveredSymbol = item ? item.symbol : null;
+  }
+
+  onDonutMouseMove(event: MouseEvent): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = -((y - centerY) / centerY) * 16;
+    const rotateY = ((x - centerX) / centerX) * 16;
+    this.tiltTransform = `perspective(800px) rotateX(${rotateX.toFixed(1)}deg) rotateY(${rotateY.toFixed(1)}deg) scale3d(1.04, 1.04, 1.04)`;
+  }
+
+  onDonutMouseLeave(): void {
+    this.tiltTransform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+    this.setHoveredAllocation(null);
   }
 
   getAllocationColor(index: number): string {
