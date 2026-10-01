@@ -242,8 +242,13 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                   <button class="btn-micro btn-micro-expand" (click)="openMarketLeadersModal()" title="Open expanded Market Leaders window">
                     ⛶ Expand Window
                   </button>
-                  <button class="btn-micro btn-micro-refresh" (click)="loadMarketQuotes()" title="Refresh live quotes">
-                    ↻ Refresh
+                  <button class="btn-micro btn-micro-refresh" (click)="refreshMarketLeadersNow()" [disabled]="isRefreshingMarket" title="Refresh live quotes">
+                    <svg class="refresh-micro-svg" [class.spin-icon]="isRefreshingMarket" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <polyline points="1 20 1 14 7 14"></polyline>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>{{ isRefreshingMarket ? 'Refreshing...' : 'Refresh' }}</span>
                   </button>
                   <a routerLink="/market" class="card-action-link">Market Directory →</a>
                 </div>
@@ -1055,18 +1060,30 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       gap: 0.5rem;
     }
     .btn-micro-refresh {
-      background: rgba(56, 189, 248, 0.1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(56, 189, 248, 0.12);
       color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
       font-size: 0.75rem;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.2s ease;
     }
-    .btn-micro-refresh:hover {
+    .btn-micro-refresh:hover:not(:disabled) {
       background: #38bdf8;
       color: #0f172a;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+    .btn-micro-refresh:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .refresh-micro-svg {
+      flex-shrink: 0;
     }
     .quote-status-loading {
       display: flex;
@@ -1502,6 +1519,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   quotesLoading: Record<string, boolean> = {};
   quotesError: Record<string, string> = {};
   flashingSymbols: Record<string, 'up' | 'down'> = {};
+  isRefreshingMarket = false;
 
   // Market Leaders Window Modal State
   showMarketLeadersModal = false;
@@ -1542,6 +1560,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   closeMarketLeadersModal(): void {
     this.showMarketLeadersModal = false;
+  }
+
+  refreshMarketLeadersNow(): void {
+    this.isRefreshingMarket = true;
+    this.marketService.getStocks().subscribe({
+      next: (stocks) => {
+        this.popularStocks = stocks || [];
+        this.loadMarketQuotes();
+        this.simulateMarketLeadersMicroTicks();
+        setTimeout(() => {
+          this.isRefreshingMarket = false;
+        }, 750);
+      },
+      error: () => {
+        this.loadMarketQuotes();
+        this.simulateMarketLeadersMicroTicks();
+        setTimeout(() => {
+          this.isRefreshingMarket = false;
+        }, 750);
+      }
+    });
   }
 
   ngOnInit(): void {
