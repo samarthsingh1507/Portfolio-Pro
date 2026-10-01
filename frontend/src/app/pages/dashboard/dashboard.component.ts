@@ -142,7 +142,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let h of topHoldings">
+                    <tr *ngFor="let h of topHoldings" [class.hold-flash-up]="flashingSymbols[h.symbol] === 'up'" [class.hold-flash-down]="flashingSymbols[h.symbol] === 'down'">
                       <td>
                         <div class="stock-cell">
                           <a [routerLink]="['/market', h.symbol]" class="stock-sym">{{ h.symbol }}</a>
@@ -150,10 +150,12 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                         </div>
                       </td>
                       <td class="text-right font-bold">{{ h.quantity }}</td>
-                      <td class="text-right">\${{ (h.currentPrice ?? 0) | number:'1.2-2' }}</td>
-                      <td class="text-right font-bold">\${{ (h.currentValue ?? 0) | number:'1.2-2' }}</td>
+                      <td class="text-right font-mono" [ngClass]="flashingSymbols[h.symbol] === 'up' ? 'text-green font-bold' : (flashingSymbols[h.symbol] === 'down' ? 'text-red font-bold' : '')">
+                        \${{ (h.currentPrice ?? 0) | number: getPriceFormat(h.symbol) }}
+                      </td>
+                      <td class="text-right font-bold font-mono">\${{ (h.currentValue ?? 0) | number:'1.2-2' }}</td>
                       <td
-                        class="text-right font-bold"
+                        class="text-right font-bold font-mono"
                         [ngClass]="(h.profitLoss ?? 0) >= 0 ? 'text-green' : 'text-red'"
                       >
                         {{ (h.profitLoss ?? 0) >= 0 ? '+' : '' }}\${{ (h.profitLoss ?? 0) | number:'1.2-2' }}
@@ -252,7 +254,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
               </div>
 
               <div *ngIf="popularStocks.length > 0" class="popular-stocks-list scrollable-card-body">
-                <div *ngFor="let s of popularStocks" class="popular-stock-row">
+                <div *ngFor="let s of popularStocks" class="popular-stock-row" [class.pop-flash-up]="flashingSymbols[s.symbol] === 'up'" [class.pop-flash-down]="flashingSymbols[s.symbol] === 'down'">
                   <div class="pop-left">
                     <a [routerLink]="['/market', s.symbol]" class="stock-sym-lg">{{ s.symbol }}</a>
                     <div class="pop-details">
@@ -281,7 +283,9 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                     <!-- Price Block: Always shows real/live price with status badge -->
                     <div *ngIf="liveQuotes[s.symbol]" class="pop-quote-block">
                       <div class="pop-price-row">
-                        <span class="pop-price">\${{ liveQuotes[s.symbol].price | number: getPriceFormat(s.symbol) }}</span>
+                        <span class="pop-price" [ngClass]="flashingSymbols[s.symbol] === 'up' ? 'text-green font-bold' : (flashingSymbols[s.symbol] === 'down' ? 'text-red font-bold' : '')">
+                          \${{ liveQuotes[s.symbol].price | number: getPriceFormat(s.symbol) }}
+                        </span>
                         <span
                           class="market-badge-micro"
                           [ngClass]="liveQuotes[s.symbol].marketStatus === 'OPEN' ? 'status-open' : 'status-closed'"
@@ -457,7 +461,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let s of filteredModalStocks" class="modal-table-row">
+                <tr *ngFor="let s of filteredModalStocks" class="modal-table-row" [class.modal-row-flash-up]="flashingSymbols[s.symbol] === 'up'" [class.modal-row-flash-down]="flashingSymbols[s.symbol] === 'down'">
                   <td>
                     <div class="asset-cell">
                       <a [routerLink]="['/market', s.symbol]" (click)="closeMarketLeadersModal()" class="asset-symbol">
@@ -476,7 +480,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
                     </svg>
                   </td>
                   <td class="text-right">
-                    <span class="modal-price font-bold">
+                    <span class="modal-price font-bold" [ngClass]="flashingSymbols[s.symbol] === 'up' ? 'text-green' : (flashingSymbols[s.symbol] === 'down' ? 'text-red' : '')">
                       \${{ (liveQuotes[s.symbol]?.price || s.price) | number: getPriceFormat(s.symbol) }}
                     </span>
                   </td>
@@ -980,6 +984,30 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       background: #0b1120;
       border: 1px solid #1e293b;
       border-radius: 8px;
+      transition: background-color 0.35s ease, border-color 0.35s ease;
+    }
+    .popular-stock-row.pop-flash-up {
+      background-color: rgba(16, 185, 129, 0.14) !important;
+      border-color: rgba(16, 185, 129, 0.45) !important;
+    }
+    .popular-stock-row.pop-flash-down {
+      background-color: rgba(239, 68, 68, 0.14) !important;
+      border-color: rgba(239, 68, 68, 0.45) !important;
+    }
+    .modal-table-row {
+      transition: background-color 0.35s ease;
+    }
+    .modal-table-row.modal-row-flash-up td {
+      background-color: rgba(16, 185, 129, 0.14) !important;
+    }
+    .modal-table-row.modal-row-flash-down td {
+      background-color: rgba(239, 68, 68, 0.14) !important;
+    }
+    .hold-flash-up td {
+      background-color: rgba(16, 185, 129, 0.14) !important;
+    }
+    .hold-flash-down td {
+      background-color: rgba(239, 68, 68, 0.14) !important;
     }
     .pop-left {
       display: flex;
@@ -1473,6 +1501,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   liveQuotes: Record<string, MarketQuote> = {};
   quotesLoading: Record<string, boolean> = {};
   quotesError: Record<string, string> = {};
+  flashingSymbols: Record<string, 'up' | 'down'> = {};
 
   // Market Leaders Window Modal State
   showMarketLeadersModal = false;
@@ -1483,6 +1512,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectedTradeStock: { id: number; symbol: string; companyName: string; price: number } | null = null;
   tradeActionType: 'BUY' | 'SELL' = 'BUY';
   private liveSubscription: Subscription | null = null;
+  private liveTickTimer: any = null;
 
   constructor(
     public authService: AuthService,
@@ -1517,20 +1547,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadAllDashboardData();
 
+    // High-frequency live tick stream (fluctuations every 1.1s)
+    this.liveTickTimer = setInterval(() => {
+      if (this.popularStocks.length > 0 && !this.isLoading) {
+        this.simulateMarketLeadersMicroTicks();
+      }
+    }, 1100);
+
     // Auto-stream quotes and mark-to-market every 10s
     this.liveSubscription = interval(10000).subscribe(() => {
       if (!this.isLoading) {
         this.pollQuotesSilently();
-        this.portfolioService.getPortfolio().subscribe({
-          next: (port) => {
-            this.portfolio = port;
-            this.topHoldings = (port.holdings || [])
-              .slice()
-              .sort((a, b) => (b.currentValue ?? b.investedValue) - (a.currentValue ?? a.investedValue))
-              .slice(0, 5);
-          },
-          error: () => {}
-        });
       }
     });
   }
@@ -1540,6 +1567,87 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.liveSubscription.unsubscribe();
       this.liveSubscription = null;
     }
+    if (this.liveTickTimer) {
+      clearInterval(this.liveTickTimer);
+      this.liveTickTimer = null;
+    }
+  }
+
+  simulateMarketLeadersMicroTicks(): void {
+    const list = this.popularStocks;
+    if (!list || list.length === 0) return;
+
+    // Pick 3 to 7 random instruments across the universe to tick
+    const count = Math.min(7, Math.max(3, Math.floor(list.length * 0.16)));
+    for (let i = 0; i < count; i++) {
+      const idx = Math.floor(Math.random() * list.length);
+      const stock = list[idx];
+      if (!stock) continue;
+
+      const sym = stock.symbol.trim().toUpperCase();
+      const isFx = this.isForex(sym);
+      const curQuote = this.liveQuotes[sym];
+      const curPrice = curQuote ? curQuote.price : stock.price;
+
+      // Subtle realistic micro-variance
+      const deltaPct = (isFx ? 0.00028 : 0.0011) * (Math.random() - 0.49);
+      let newPrice = curPrice + curPrice * deltaPct;
+      if (newPrice <= 0) newPrice = curPrice;
+
+      newPrice = isFx ? Math.round(newPrice * 10000) / 10000 : Math.round(newPrice * 100) / 100;
+
+      const refPrice = stock.price || curPrice;
+      const change = newPrice - refPrice;
+      const changePercent = refPrice > 0 ? (change / refPrice) * 100 : 0;
+
+      const direction: 'up' | 'down' = newPrice >= curPrice ? 'up' : 'down';
+      this.flashingSymbols[sym] = direction;
+      setTimeout(() => {
+        delete this.flashingSymbols[sym];
+      }, 550);
+
+      this.liveQuotes[sym] = {
+        symbol: sym,
+        price: newPrice,
+        change: isFx ? Math.round(change * 10000) / 10000 : Math.round(change * 100) / 100,
+        changePercent: Math.round(changePercent * 100) / 100,
+        timestamp: new Date().toISOString(),
+        marketStatus: 'OPEN'
+      };
+    }
+
+    this.updateHoldingsMarkToMarket();
+  }
+
+  updateHoldingsMarkToMarket(): void {
+    if (!this.portfolio || !this.portfolio.holdings) return;
+
+    let totalInvested = 0;
+    let totalCurrentValue = 0;
+
+    for (const h of this.portfolio.holdings) {
+      const sym = (h.symbol || '').trim().toUpperCase();
+      const buyPrice = h.averageBuyPrice || 100.0;
+      const currentPrice = this.liveQuotes[sym]?.price ?? (h.currentPrice ?? buyPrice);
+      h.currentPrice = currentPrice;
+      h.currentValue = currentPrice * h.quantity;
+      h.investedValue = buyPrice * h.quantity;
+      h.profitLoss = h.currentValue - h.investedValue;
+      h.profitLossPercent = h.investedValue > 0 ? (h.profitLoss / h.investedValue) * 100 : 0;
+
+      totalInvested += h.investedValue;
+      totalCurrentValue += h.currentValue;
+    }
+
+    this.portfolio.totalInvested = totalInvested;
+    this.portfolio.currentValue = totalCurrentValue;
+    this.portfolio.totalProfitLoss = totalCurrentValue - totalInvested;
+    this.portfolio.profitLossPercent = totalInvested > 0 ? (this.portfolio.totalProfitLoss / totalInvested) * 100 : 0;
+
+    this.topHoldings = this.portfolio.holdings
+      .slice()
+      .sort((a, b) => (b.currentValue ?? b.investedValue) - (a.currentValue ?? a.investedValue))
+      .slice(0, 5);
   }
 
   pollQuotesSilently(): void {
