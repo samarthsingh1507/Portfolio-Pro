@@ -24,7 +24,7 @@ import { TradeFormComponent } from '../trading/trade-form/trade-form.component';
       <!-- HEADER -->
       <div class="dashboard-header">
         <div class="welcome-box">
-          <h1>{{ getGreeting() }}, <span class="username-highlight">{{ authService.currentUser() || 'Trader' }}</span> {{ getGreetingIcon() }}</h1>
+          <h1>{{ getGreeting() }}, <span class="username-highlight">{{ authService.currentUser() || 'Trader' }}</span></h1>
           <p class="subtitle">Here is your live simulated market overview, portfolio valuation, and recent activity.</p>
         </div>
 
@@ -1551,19 +1551,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return 'Good Evening';
     } else {
       return 'Welcome';
-    }
-  }
-
-  getGreetingIcon(): string {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) {
-      return '☀️';
-    } else if (hour >= 12 && hour < 17) {
-      return '🌤️';
-    } else if (hour >= 17 && hour < 21) {
-      return '🌆';
-    } else {
-      return '🌙';
     }
   }
 
