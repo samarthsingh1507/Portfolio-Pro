@@ -34,35 +34,57 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
             [class.active]="activeTab === 'all' && selectedCategory === 'all'"
             (click)="activeTab = 'all'; selectedCategory = 'all'"
           >
-            All Assets ({{ stocks.length }})
+            <svg class="tab-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>All Assets ({{ stocks.length }})</span>
           </button>
           <button
             class="tab-btn"
             [class.active]="activeTab === 'all' && selectedCategory === 'stocks'"
             (click)="activeTab = 'all'; selectedCategory = 'stocks'"
           >
-            📈 Stocks ({{ stockCount }})
+            <svg class="tab-svg text-emerald" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+              <polyline points="16 7 22 7 22 13"></polyline>
+            </svg>
+            <span>Stocks ({{ stockCount }})</span>
           </button>
           <button
             class="tab-btn"
             [class.active]="activeTab === 'all' && selectedCategory === 'commodities'"
             (click)="activeTab = 'all'; selectedCategory = 'commodities'"
           >
-            🪙 Gold & Metals ({{ commodityCount }})
+            <svg class="tab-svg text-gold" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>Gold & Metals ({{ commodityCount }})</span>
           </button>
           <button
             class="tab-btn"
             [class.active]="activeTab === 'all' && selectedCategory === 'forex'"
             (click)="activeTab = 'all'; selectedCategory = 'forex'"
           >
-            💱 Forex ({{ forexCount }})
+            <svg class="tab-svg text-purple" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <span>Forex ({{ forexCount }})</span>
           </button>
           <button
             class="tab-btn"
             [class.active]="activeTab === 'watchlist'"
             (click)="activeTab = 'watchlist'"
           >
-            ⭐ Watchlist
+            <svg class="tab-svg text-amber" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            <span>Watchlist</span>
           </button>
         </div>
       </div>
@@ -71,7 +93,10 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       <div *ngIf="activeTab === 'all'" class="tab-content">
         <div class="filter-bar">
           <div class="search-box">
-            <span class="search-icon">🔍</span>
+            <svg class="search-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
             <input
               type="text"
               [(ngModel)]="searchQuery"
@@ -102,11 +127,19 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
             title="Toggle real-time streaming ticks across all instruments"
           >
             <span class="live-dot" [class.paused]="!isLiveTickActive"></span>
-            <span>{{ isLiveTickActive ? '⚡ LIVE REAL-TIME FEED' : '⏸ FEED PAUSED' }}</span>
+            <svg class="btn-live-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>{{ isLiveTickActive ? 'LIVE REAL-TIME FEED' : 'FEED PAUSED' }}</span>
           </button>
 
           <button class="btn btn-outline btn-refresh" (click)="refreshQuotesNow()" title="Force Refresh Live Quotes">
-            <span [class.spin-icon]="isRefreshing">↻</span> Refresh
+            <svg class="refresh-svg" [class.spin-icon]="isRefreshing" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>Refresh</span>
           </button>
         </div>
 
@@ -147,8 +180,19 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
                 <td class="company-name">
                   <div class="name-box">
                     <span>{{ stock.companyName }}</span>
-                    <span *ngIf="isCommodity(stock.symbol)" class="commodity-tag">🪙 GOLD / METALS</span>
-                    <span *ngIf="isForex(stock.symbol)" class="fx-tag">💱 FOREX</span>
+                    <span *ngIf="isCommodity(stock.symbol)" class="commodity-tag">
+                      <svg class="mini-tag-svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                      </svg>
+                      METALS
+                    </span>
+                    <span *ngIf="isForex(stock.symbol)" class="fx-tag">
+                      <svg class="mini-tag-svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                      </svg>
+                      FOREX
+                    </span>
                   </div>
                 </td>
                 <td><span class="sector-tag">{{ stock.sector }}</span></td>
@@ -187,8 +231,12 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
                     (click)="toggleWatchlist(stock)"
                     [title]="watchlistService.isWatched(stock.id) ? 'Remove from watchlist' : 'Add to watchlist'"
                   >
-                    <span *ngIf="watchlistService.isWatched(stock.id)" class="star-active">★</span>
-                    <span *ngIf="!watchlistService.isWatched(stock.id)" class="star-inactive">☆</span>
+                    <svg *ngIf="watchlistService.isWatched(stock.id)" class="star-icon watched" width="16" height="16" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="1.5">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    <svg *ngIf="!watchlistService.isWatched(stock.id)" class="star-icon unwatched" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
                   </button>
                 </td>
                 <td class="text-center">
@@ -269,25 +317,42 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       flex-wrap: wrap;
     }
     .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
       background: #1e293b;
       border: 1px solid #334155;
       color: #94a3b8;
       padding: 0.5rem 1rem;
       border-radius: 8px;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.2s ease;
     }
     .tab-btn:hover {
       color: #f8fafc;
       background: #334155;
+      border-color: #475569;
     }
     .tab-btn.active {
       background: #2563eb;
       color: #ffffff;
       border-color: #2563eb;
+      box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
     }
+    .tab-svg {
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .tab-btn:hover .tab-svg {
+      transform: scale(1.12);
+    }
+    .text-emerald { color: #34d399; }
+    .text-gold { color: #fbbf24; }
+    .text-purple { color: #c084fc; }
+    .text-amber { color: #fbbf24; }
+
     .filter-bar {
       display: flex;
       gap: 1rem;
@@ -302,10 +367,9 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       display: flex;
       align-items: center;
     }
-    .search-icon {
+    .search-icon-svg {
       position: absolute;
       left: 1rem;
-      color: #64748b;
       pointer-events: none;
     }
     .search-input {
@@ -451,21 +515,33 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
       gap: 0.4rem;
     }
     .fx-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
       font-size: 0.65rem;
       font-weight: 800;
-      padding: 0.1rem 0.35rem;
-      border-radius: 3px;
-      background: rgba(192, 132, 252, 0.2);
+      letter-spacing: 0.04em;
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(192, 132, 252, 0.16);
       color: #c084fc;
+      border: 1px solid rgba(192, 132, 252, 0.35);
     }
     .commodity-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
       font-size: 0.65rem;
       font-weight: 800;
-      padding: 0.1rem 0.35rem;
-      border-radius: 3px;
-      background: rgba(251, 191, 36, 0.2);
+      letter-spacing: 0.04em;
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(251, 191, 36, 0.16);
       color: #fbbf24;
       border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+    .mini-tag-svg {
+      flex-shrink: 0;
     }
     .sector-tag {
       display: inline-block;
@@ -508,13 +584,27 @@ import { WatchlistComponent } from './watchlist/watchlist.component';
     .btn-icon {
       background: none;
       border: none;
-      font-size: 1.25rem;
       cursor: pointer;
-      padding: 0.25rem;
+      padding: 0.3rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       line-height: 1;
+      border-radius: 6px;
+      transition: background-color 0.15s ease;
     }
-    .star-active { color: #fbbf24; }
-    .star-inactive { color: #475569; }
+    .btn-icon:hover {
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+    .star-icon {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .star-icon.watched {
+      filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.7));
+    }
+    .btn-icon:hover .star-icon {
+      transform: scale(1.22);
+    }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
     .text-muted { color: #64748b; }
