@@ -1,0 +1,5 @@
+Order ID,Timestamp,Ticker Symbol,Company,Order Type,Quantity,Execution Price ($),Total Value ($),Status
+101,2026-11-01 17:51:34,AAPL,Apple Inc.,BUY,10,225.5,2255.0,EXECUTED
+102,2026-11-01 17:51:34,GOOGL,Alphabet Inc.,BUY,15,120.8,1812.0,EXECUTED
+103,2026-11-01 17:52:10,NVDA,NVIDIA Corp.,BUY,5,120.8,604.0,EXECUTED
+104,2026-11-01 17:53:05,AAPL,Apple Inc.,SELL,2,226.1,452.2,EXECUTED

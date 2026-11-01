@@ -1,0 +1,5 @@
+Ticker Symbol,Company,Shares Held,Avg Cost Basis ($),Current Price ($),Total Invested ($),Current Valuation ($),Unrealized P&L ($),Return (%),Asset Weight (%)
+AAPL,Apple Inc.,8,225.5,225.5,1804.0,1804.0,0.0,0.0,36.85
+GOOGL,Alphabet Inc.,15,120.8,165.75,1812.0,2486.25,674.25,37.21,50.79
+NVDA,NVIDIA Corporation,5,120.8,120.8,604.0,604.0,0.0,0.0,12.34
+TOTALS,PORTFOLIO TOTAL,28,-,-,4220.0,4894.25,674.25,15.98,100.0

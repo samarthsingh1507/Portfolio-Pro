@@ -1,0 +1,9 @@
+Symbol,Company Name,Sector,Current Price ($),Market Cap ($),EPS ($),P/E Ratio
+AAPL,Apple Inc.,Technology,225.5,3450000000000,6.42,35.12
+MSFT,Microsoft Corporation,Technology,448.2,3180000000000,11.8,36.28
+NVDA,NVIDIA Corporation,Semiconductors & AI,120.8,2980000000000,1.85,65.83
+GOOGL,Alphabet Inc.,Communication Services,165.75,2060000000000,6.7,24.73
+AMZN,Amazon.com Inc.,Consumer Cyclical,185.3,1940000000000,4.18,44.59
+META,Meta Platforms Inc.,Communication Services,580.4,1440000000000,19.45,29.24
+TSLA,Tesla Inc.,Consumer Cyclical,215.6,810000000000,2.15,118.27
+JPM,JPMorgan Chase & Co.,Financial Services,220.1,630000000000,16.8,13.1
