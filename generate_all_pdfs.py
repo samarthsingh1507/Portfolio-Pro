@@ -55,6 +55,7 @@ def generate_synopsis_pdf():
   <table class="meta">
     <tr><td class="label">Candidate / Student Name</td><td>Samarth Singh</td></tr>
     <tr><td class="label">Project Title</td><td>PortfolioPro (Enterprise Stock Trading & Mark-to-Market Platform)</td></tr>
+    <tr><td class="label">Live Deployed Web App</td><td><a href="https://portfolio-pro-ten-lilac.vercel.app" style="color: #2563eb; text-decoration: none; font-weight: bold;">https://portfolio-pro-ten-lilac.vercel.app</a></td></tr>
     <tr><td class="label">GitHub Repository</td><td><a href="https://github.com/samarthsingh1507/Portfolio-Pro" style="color: #2563eb; text-decoration: none; font-weight: bold;">https://github.com/samarthsingh1507/Portfolio-Pro</a></td></tr>
     <tr><td class="label">Program / Submission</td><td>HCL Career Shaper — Centre of Excellence (COE)</td></tr>
     <tr><td class="label">Technology Stack</td><td>Full Stack (Java Spring Boot 3, Angular 19, MySQL 8, Docker)</td></tr>
@@ -153,7 +154,7 @@ def generate_screenshots_pdf():
 </head>
 <body>
   <h1>PORTFOLIOPRO — WORKING APPLICATION SCREENSHOTS</h1>
-  <div class="subtitle">Live Deployed / Localhost Running System Verification<br>Candidate: Samarth Singh | HCL Career Shaper COE Submission<br>GitHub: <a href="https://github.com/samarthsingh1507/Portfolio-Pro" style="color: #2563eb; font-weight: bold; text-decoration: none;">https://github.com/samarthsingh1507/Portfolio-Pro</a></div>
+  <div class="subtitle">Live Deployed / Localhost Running System Verification<br>Candidate: Samarth Singh | HCL Career Shaper COE Submission<br>Live App: <a href="https://portfolio-pro-ten-lilac.vercel.app" style="color: #2563eb; font-weight: bold; text-decoration: none;">https://portfolio-pro-ten-lilac.vercel.app</a> | GitHub: <a href="https://github.com/samarthsingh1507/Portfolio-Pro" style="color: #2563eb; font-weight: bold; text-decoration: none;">https://github.com/samarthsingh1507/Portfolio-Pro</a></div>
   {items_html}
 </body>
 </html>
@@ -216,7 +217,7 @@ def generate_source_code_pdf():
 </head>
 <body>
   <h1>PORTFOLIOPRO — COMPLETE SOURCE CODE COMPILATION</h1>
-  <div class="subtitle">Backend (Spring Boot 3 / Java 17) & Frontend (Angular 19 / TypeScript)<br>Candidate: Samarth Singh | HCL Career Shaper COE Submission<br>GitHub: <a href="https://github.com/samarthsingh1507/Portfolio-Pro" style="color: #2563eb; font-weight: bold; text-decoration: none;">https://github.com/samarthsingh1507/Portfolio-Pro</a></div>
+  <div class="subtitle">Backend (Spring Boot 3 / Java 17) & Frontend (Angular 19 / TypeScript)<br>Candidate: Samarth Singh | HCL Career Shaper COE Submission<br>Live App: <a href="https://portfolio-pro-ten-lilac.vercel.app" style="color: #2563eb; font-weight: bold; text-decoration: none;">https://portfolio-pro-ten-lilac.vercel.app</a> | GitHub: <a href="https://github.com/samarthsingh1507/Portfolio-Pro" style="color: #2563eb; font-weight: bold; text-decoration: none;">https://github.com/samarthsingh1507/Portfolio-Pro</a></div>
   {files_html}
 </body>
 </html>

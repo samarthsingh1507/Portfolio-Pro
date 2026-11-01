@@ -45,16 +45,15 @@ def create_synopsis_docx():
     run_sub.font.size = Pt(14)
     run_sub.font.color.rgb = RGBColor(37, 99, 235)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(12)
-
     # Candidate / Submission Metadata Box
-    table = doc.add_table(rows=6, cols=2)
+    table = doc.add_table(rows=7, cols=2)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     table.autofit = False
 
     metadata = [
         ("Candidate / Student Name", "Samarth Singh"),
         ("Project Title", "PortfolioPro (Enterprise Stock Trading & Analytics Platform)"),
+        ("Live Deployed Web App", "https://portfolio-pro-ten-lilac.vercel.app"),
         ("GitHub Repository", "https://github.com/samarthsingh1507/Portfolio-Pro"),
         ("Program / Submission", "HCL Career Shaper — Centre of Excellence (COE)"),
         ("Technology Stack", "Full Stack (Java Spring Boot 3, Angular 19, MySQL 8, Docker)"),
@@ -208,7 +207,7 @@ def create_screenshots_docx():
 
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r_sub = p_sub.add_run("Live Deployed / Localhost Running System Verification\nCandidate: Samarth Singh | HCL Career Shaper COE Submission\nGitHub: https://github.com/samarthsingh1507/Portfolio-Pro")
+    r_sub = p_sub.add_run("Live Deployed / Localhost Running System Verification\nCandidate: Samarth Singh | HCL Career Shaper COE Submission\nLive App: https://portfolio-pro-ten-lilac.vercel.app\nGitHub: https://github.com/samarthsingh1507/Portfolio-Pro")
     r_sub.font.size = Pt(11)
     r_sub.font.color.rgb = RGBColor(71, 85, 105)
 
@@ -266,7 +265,7 @@ def create_source_code_docx():
 
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r_sub = p_sub.add_run("Backend (Spring Boot 3 / Java 17) & Frontend (Angular 19 / TypeScript)\nCandidate: Samarth Singh | HCL Career Shaper COE Submission\nGitHub: https://github.com/samarthsingh1507/Portfolio-Pro\n")
+    r_sub = p_sub.add_run("Backend (Spring Boot 3 / Java 17) & Frontend (Angular 19 / TypeScript)\nCandidate: Samarth Singh | HCL Career Shaper COE Submission\nLive App: https://portfolio-pro-ten-lilac.vercel.app\nGitHub: https://github.com/samarthsingh1507/Portfolio-Pro\n")
     r_sub.font.size = Pt(11)
     r_sub.font.color.rgb = RGBColor(71, 85, 105)
 
